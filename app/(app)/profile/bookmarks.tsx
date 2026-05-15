@@ -98,6 +98,7 @@ export default function BookmarksScreen() {
             icon="bookmark-outline"
             title={t('profile.bookmarksEmpty')}
             description={t('profile.bookmarksEmptyDesc')}
+            tone="accent"
           />
         }
       />

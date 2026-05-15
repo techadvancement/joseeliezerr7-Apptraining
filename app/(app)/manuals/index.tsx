@@ -140,6 +140,7 @@ export default function ManualsIndex() {
               icon="library-outline"
               title={t('manuals.empty')}
               description={query ? t('manuals.emptySearch') : undefined}
+              tone="accent"
             />
           }
         />

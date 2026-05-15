@@ -94,6 +94,7 @@ export default function DownloadsScreen() {
             description={
               downloads.supported ? t('profile.downloadsEmptyDesc') : t('videos.downloadOnDeviceOnly')
             }
+            tone="success"
           />
         }
       />
