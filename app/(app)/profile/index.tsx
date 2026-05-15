@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { CategoryChip } from '@/components/CategoryChip';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useIsAdmin } from '@/lib/auth';
 import { setLanguage } from '@/lib/i18n';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
@@ -23,6 +23,7 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
+  const isAdmin = useIsAdmin();
 
   function confirmSignOut() {
     if (Platform.OS === 'web') {
@@ -87,15 +88,30 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.account')}</Text>
           <Pressable
-            onPress={() => router.push('/profile/bookmarks')}
+            onPress={() => router.push('/profile/library')}
             style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Ionicons name="bookmark" size={18} color={colors.accent} />
-              <Text style={styles.rowLabel}>{t('profile.bookmarks')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 }}>
+              <Ionicons name="library" size={18} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>{t('profile.library')}</Text>
+                <Text style={styles.rowSub}>{t('profile.librarySub')}</Text>
+              </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>
+          {isAdmin ? (
+            <Pressable
+              onPress={() => router.push('/admin')}
+              style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Ionicons name="shield-checkmark" size={18} color="#10B981" />
+                <Text style={styles.rowLabel}>Panel administrativo</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.section}>
@@ -213,6 +229,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   rowLabel: { color: colors.text, ...typography.bodyBold },
+  rowSub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   rowValue: { color: colors.textMuted },
   dangerRow: {
     flexDirection: 'row',

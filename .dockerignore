@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+dist
+.expo
+.expo-shared
+__tests__
+*.log
+.env
+.env.local
+.DS_Store
+Thumbs.db
+README.md
+.vscode
+.idea

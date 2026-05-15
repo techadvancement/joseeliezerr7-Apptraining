@@ -26,7 +26,8 @@
     "back": "Atrás",
     "language": "Idioma",
     "english": "Inglés",
-    "spanish": "Español"
+    "spanish": "Español",
+    "seeAll": "Ver todo"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -91,7 +92,10 @@
     "featured": "Destacado",
     "continueWatching": "Continuar viendo",
     "categories": "Categorías",
-    "latestManuals": "Últimos manuales"
+    "latestManuals": "Últimos manuales",
+    "newVideos": "Nuevos videos",
+    "newVideosSub": "Recién agregados",
+    "fromCategory": "Más en {{category}}"
   },
   "videos": {
     "title": "Videos de entrenamiento",
@@ -116,7 +120,18 @@
     "notesSaving": "Guardando…",
     "notesSaved": "Guardado",
     "upNext": "A continuación",
-    "playNow": "Ver ahora"
+    "playNow": "Ver ahora",
+    "playbackSpeed": "Velocidad de reproducción",
+    "normal": "Normal",
+    "listenAudio": "Escuchar en segundo plano",
+    "miniPlayer": "Mini reproductor",
+    "download": "Descargar",
+    "downloading": "Descargando…",
+    "downloaded": "Descargado",
+    "removeDownload": "Eliminar descarga",
+    "confirmRemoveDownload": "¿Eliminar este video descargado?",
+    "downloadFailed": "Error al descargar",
+    "downloadOnDeviceOnly": "Las descargas solo están disponibles en la app móvil."
   },
   "manuals": {
     "title": "Manuales",
@@ -142,9 +157,17 @@
   "profile": {
     "title": "Perfil",
     "account": "Cuenta",
+    "library": "Biblioteca",
+    "librarySub": "Guardados, descargados y en progreso",
     "bookmarks": "Guardados",
     "bookmarksEmpty": "Aún no has guardado nada",
     "bookmarksEmptyDesc": "Toca el icono de marcador en un video o manual para guardarlo.",
+    "downloads": "Descargas",
+    "downloadsEmpty": "Aún no hay descargas",
+    "downloadsEmptyDesc": "Toca el icono de descarga en un video para guardarlo para verlo sin conexión.",
+    "storageUsed": "{{size}} usados",
+    "clearAll": "Eliminar todo",
+    "confirmClearAll": "¿Eliminar todos los videos descargados?",
     "preferences": "Preferencias",
     "about": "Acerca de",
     "version": "Versión",
@@ -233,6 +256,170 @@
           "body": "Preguntas de privacidad: privacy@example.com."
         }
       ]
+    }
+  },
+  "series": {
+    "label": "SERIE",
+    "title": "Programas",
+    "subtitle": "Series completas de entrenamiento",
+    "lessons_one": "lección",
+    "lessons_other": "lecciones",
+    "start": "Empezar",
+    "continue": "Continuar",
+    "rewatch": "Repetir",
+    "about": "Acerca de esta serie",
+    "lessonsTitle": "Lecciones",
+    "completed": "{{done}}/{{total}} completadas · {{pct}}%",
+    "watchedPct": "{{pct}}% visto",
+    "empty": "Aún no hay series disponibles."
+  },
+  "admin": {
+    "title": "Panel administrativo",
+    "eyebrow": "PANEL ADMIN",
+    "hello": "Hola, {{name}}",
+    "badge": "ADMIN",
+    "manageContent": "Gestionar contenido",
+    "panelTitle": "Panel administrativo",
+    "sections": {
+      "series": "Programas con varios videos en orden",
+      "videos": "Subir, editar y organizar videos",
+      "manuals": "PDFs en inglés y español",
+      "categories": "Programas de entrenamiento",
+      "users": "Gestionar técnicos y administradores"
+    },
+    "stats": {
+      "videos": "Videos",
+      "manuals": "Manuales",
+      "categories": "Categorías",
+      "users": "Usuarios"
+    },
+    "labels": {
+      "videos": "ADMIN · VIDEOS",
+      "manuals": "ADMIN · MANUALES",
+      "categories": "ADMIN · CATEGORÍAS",
+      "users": "ADMIN · USUARIOS",
+      "series": "ADMIN · SERIES"
+    },
+    "titles": {
+      "videos": "Videos",
+      "manuals": "Manuales",
+      "categories": "Categorías",
+      "users": "Usuarios",
+      "series": "Series",
+      "seriesCount_one": "{{count}} serie",
+      "seriesCount_other": "{{count}} series"
+    },
+    "rowOrder": "orden {{n}}",
+    "new": {
+      "video": "Nuevo video",
+      "manual": "Nuevo manual",
+      "category": "Nueva categoría",
+      "series": "Nueva serie"
+    },
+    "edit": {
+      "video": "Editar video",
+      "manual": "Editar manual",
+      "category": "Editar: {{name}}",
+      "series": "Editar: {{name}}"
+    },
+    "form": {
+      "titleEn": "Título (Inglés)",
+      "titleEs": "Título (Español)",
+      "descriptionEn": "Descripción (Inglés)",
+      "descriptionEs": "Descripción (Español)",
+      "nameEn": "Nombre (Inglés)",
+      "nameEs": "Nombre (Español)",
+      "slug": "Slug (URL)",
+      "slugHint": "Se autocompleta si lo dejas vacío",
+      "order": "Orden",
+      "category": "Categoría",
+      "noCategory": "Sin categoría",
+      "categoryOptional": "Categoría (opcional)",
+      "series": "Serie (opcional)",
+      "noSeries": "Sin serie",
+      "seriesPosition": "Posición en la serie (1, 2, 3...)",
+      "thumbnailCategory": "Imagen de portada (1280×720 recomendado)",
+      "thumbnailVideo": "Miniatura (1280×720, <200 KB)",
+      "thumbnailManual": "Portada (800×1100 recomendado)",
+      "thumbnailSeries": "Portada (1280×720)",
+      "videoFile": "Archivo de video (MP4 H.264, faststart)",
+      "pdfEn": "PDF 🇺🇸 English",
+      "pdfEs": "PDF 🇪🇸 Español",
+      "pages": "Páginas (opcional)",
+      "instructor": "Instructor",
+      "duration": "Duración (seg)",
+      "resolution": "Resolución",
+      "featured": "Destacada",
+      "featuredHint": "Mostrar en Home"
+    },
+    "buttons": {
+      "save": "Guardar cambios",
+      "saving": "Guardando...",
+      "createVideo": "Crear video",
+      "createManual": "Crear manual",
+      "createCategory": "Crear categoría",
+      "createSeries": "Crear serie"
+    },
+    "toasts": {
+      "savedSeries": "Serie actualizada",
+      "createdSeries": "Serie creada",
+      "deletedSeries": "Serie eliminada",
+      "savedVideo": "Video actualizado",
+      "createdVideo": "Video creado",
+      "deletedVideo": "Video eliminado",
+      "savedManual": "Manual actualizado",
+      "createdManual": "Manual creado",
+      "deletedManual": "Manual eliminado",
+      "savedCategory": "Categoría actualizada",
+      "createdCategory": "Categoría creada",
+      "deletedCategory": "Categoría eliminada",
+      "userRoleUpdated": "Rol actualizado",
+      "userDeleted": "Usuario eliminado",
+      "uploaded": "Archivo subido",
+      "uploadError": "Error al subir"
+    },
+    "confirms": {
+      "deleteSeries": "¿Eliminar \"{{name}}\"? Los videos quedarán sin serie.",
+      "deleteVideo": "¿Eliminar \"{{name}}\"?",
+      "deleteManual": "¿Eliminar \"{{name}}\"?",
+      "deleteCategory": "¿Eliminar \"{{name}}\"? Sus videos quedarán sin categoría.",
+      "promote": "¿Promover a \"{{name}}\" a administrador?",
+      "demote": "¿Quitar permisos de admin a \"{{name}}\"?",
+      "deleteUser": "¿Eliminar definitivamente a \"{{name}}\"? Esta acción no se puede deshacer.",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "confirm": "Confirmar",
+      "title": "Confirmar"
+    },
+    "errors": {
+      "titleRequired": "El título es obligatorio",
+      "thumbnailRequired": "Sube la miniatura",
+      "videoRequired": "Sube el video",
+      "pdfRequired": "Sube al menos un PDF (EN o ES)",
+      "categoryRequired": "Selecciona una categoría",
+      "save": "Error al guardar",
+      "load": "Error al cargar"
+    },
+    "users": {
+      "you": "tú",
+      "signedUp": "alta",
+      "lastLogin": "último login",
+      "noName": "(sin nombre)",
+      "searchPlaceholder": "Buscar por nombre o email",
+      "promote": "Promover a admin",
+      "demote": "Quitar admin",
+      "delete": "Eliminar usuario",
+      "noResults": "Sin resultados."
+    },
+    "series": {
+      "empty": "Aún no hay series. Toca + para crear la primera.",
+      "placeholderTitleEn": "BTT Writer · Complete Course",
+      "placeholderTitleEs": "BTT Writer · Curso Completo"
+    },
+    "uploader": {
+      "select": "Seleccionar archivo",
+      "replace": "Reemplazar archivo",
+      "uploading": "Subiendo {{size}} MB..."
     }
   }
 }

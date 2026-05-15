@@ -69,7 +69,27 @@ export type Video = {
   resolution: string | null;
   instructor: string | null;
   chapters: Chapter[] | null;
+  series_id: string | null;
+  series_position: number | null;
   created_at: string;
+};
+
+export type Series = {
+  id: string;
+  slug: string;
+  title_en: string;
+  title_es: string;
+  description_en: string | null;
+  description_es: string | null;
+  thumbnail_url: string | null;
+  category_id: string | null;
+  order_index: number;
+  featured: boolean;
+  created_at: string;
+  updated_at: string;
+  // Optional computed fields (when joined)
+  video_count?: number;
+  total_duration_seconds?: number;
 };
 
 export type Manual = {
@@ -91,4 +111,5 @@ export type Profile = {
   country: string;
   phone: string | null;
   avatar_url: string | null;
+  role?: 'user' | 'admin' | null;
 };

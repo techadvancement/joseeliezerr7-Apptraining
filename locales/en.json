@@ -26,7 +26,8 @@
     "back": "Back",
     "language": "Language",
     "english": "English",
-    "spanish": "Spanish"
+    "spanish": "Spanish",
+    "seeAll": "See all"
   },
   "auth": {
     "signIn": "Sign in",
@@ -91,7 +92,10 @@
     "featured": "Featured",
     "continueWatching": "Continue watching",
     "categories": "Categories",
-    "latestManuals": "Latest manuals"
+    "latestManuals": "Latest manuals",
+    "newVideos": "New videos",
+    "newVideosSub": "Recently added",
+    "fromCategory": "More in {{category}}"
   },
   "videos": {
     "title": "Training videos",
@@ -116,7 +120,18 @@
     "notesSaving": "Saving…",
     "notesSaved": "Saved",
     "upNext": "Up next",
-    "playNow": "Play now"
+    "playNow": "Play now",
+    "playbackSpeed": "Playback speed",
+    "normal": "Normal",
+    "listenAudio": "Listen in background",
+    "miniPlayer": "Mini player",
+    "download": "Download",
+    "downloading": "Downloading…",
+    "downloaded": "Downloaded",
+    "removeDownload": "Remove download",
+    "confirmRemoveDownload": "Remove this downloaded video?",
+    "downloadFailed": "Download failed",
+    "downloadOnDeviceOnly": "Downloads are only available on the mobile app."
   },
   "manuals": {
     "title": "Manuals",
@@ -142,9 +157,17 @@
   "profile": {
     "title": "Profile",
     "account": "Account",
+    "library": "Library",
+    "librarySub": "Saved, downloaded & in progress",
     "bookmarks": "Saved",
     "bookmarksEmpty": "Nothing saved yet",
     "bookmarksEmptyDesc": "Tap the bookmark icon on a video or manual to save it for later.",
+    "downloads": "Downloads",
+    "downloadsEmpty": "No downloads yet",
+    "downloadsEmptyDesc": "Tap the download icon on a video to save it for offline viewing.",
+    "storageUsed": "{{size}} used",
+    "clearAll": "Clear all",
+    "confirmClearAll": "Remove all downloaded videos?",
     "preferences": "Preferences",
     "about": "About",
     "version": "Version",
@@ -233,6 +256,170 @@
           "body": "Privacy questions: privacy@example.com."
         }
       ]
+    }
+  },
+  "series": {
+    "label": "SERIES",
+    "title": "Programs",
+    "subtitle": "Complete training series",
+    "lessons_one": "lesson",
+    "lessons_other": "lessons",
+    "start": "Start",
+    "continue": "Continue",
+    "rewatch": "Rewatch",
+    "about": "About this series",
+    "lessonsTitle": "Lessons",
+    "completed": "{{done}}/{{total}} completed · {{pct}}%",
+    "watchedPct": "{{pct}}% watched",
+    "empty": "No series available yet."
+  },
+  "admin": {
+    "title": "Admin panel",
+    "eyebrow": "ADMIN PANEL",
+    "hello": "Hi, {{name}}",
+    "badge": "ADMIN",
+    "manageContent": "Manage content",
+    "panelTitle": "Admin panel",
+    "sections": {
+      "series": "Programs with multiple videos in order",
+      "videos": "Upload, edit and organize videos",
+      "manuals": "PDFs in English and Spanish",
+      "categories": "Training programs",
+      "users": "Manage technicians and administrators"
+    },
+    "stats": {
+      "videos": "Videos",
+      "manuals": "Manuals",
+      "categories": "Categories",
+      "users": "Users"
+    },
+    "labels": {
+      "videos": "ADMIN · VIDEOS",
+      "manuals": "ADMIN · MANUALS",
+      "categories": "ADMIN · CATEGORIES",
+      "users": "ADMIN · USERS",
+      "series": "ADMIN · SERIES"
+    },
+    "titles": {
+      "videos": "Videos",
+      "manuals": "Manuals",
+      "categories": "Categories",
+      "users": "Users",
+      "series": "Series",
+      "seriesCount_one": "{{count}} series",
+      "seriesCount_other": "{{count}} series"
+    },
+    "rowOrder": "order {{n}}",
+    "new": {
+      "video": "New video",
+      "manual": "New manual",
+      "category": "New category",
+      "series": "New series"
+    },
+    "edit": {
+      "video": "Edit video",
+      "manual": "Edit manual",
+      "category": "Edit: {{name}}",
+      "series": "Edit: {{name}}"
+    },
+    "form": {
+      "titleEn": "Title (English)",
+      "titleEs": "Title (Spanish)",
+      "descriptionEn": "Description (English)",
+      "descriptionEs": "Description (Spanish)",
+      "nameEn": "Name (English)",
+      "nameEs": "Name (Spanish)",
+      "slug": "Slug (URL)",
+      "slugHint": "Auto-fills if left blank",
+      "order": "Order",
+      "category": "Category",
+      "noCategory": "No category",
+      "categoryOptional": "Category (optional)",
+      "series": "Series (optional)",
+      "noSeries": "No series",
+      "seriesPosition": "Position in series (1, 2, 3...)",
+      "thumbnailCategory": "Cover image (1280×720 recommended)",
+      "thumbnailVideo": "Thumbnail (1280×720, <200 KB)",
+      "thumbnailManual": "Cover (800×1100 recommended)",
+      "thumbnailSeries": "Cover (1280×720)",
+      "videoFile": "Video file (MP4 H.264, faststart)",
+      "pdfEn": "PDF 🇺🇸 English",
+      "pdfEs": "PDF 🇪🇸 Spanish",
+      "pages": "Pages (optional)",
+      "instructor": "Instructor",
+      "duration": "Duration (sec)",
+      "resolution": "Resolution",
+      "featured": "Featured",
+      "featuredHint": "Show on Home"
+    },
+    "buttons": {
+      "save": "Save changes",
+      "saving": "Saving...",
+      "createVideo": "Create video",
+      "createManual": "Create manual",
+      "createCategory": "Create category",
+      "createSeries": "Create series"
+    },
+    "toasts": {
+      "savedSeries": "Series updated",
+      "createdSeries": "Series created",
+      "deletedSeries": "Series deleted",
+      "savedVideo": "Video updated",
+      "createdVideo": "Video created",
+      "deletedVideo": "Video deleted",
+      "savedManual": "Manual updated",
+      "createdManual": "Manual created",
+      "deletedManual": "Manual deleted",
+      "savedCategory": "Category updated",
+      "createdCategory": "Category created",
+      "deletedCategory": "Category deleted",
+      "userRoleUpdated": "Role updated",
+      "userDeleted": "User deleted",
+      "uploaded": "File uploaded",
+      "uploadError": "Upload failed"
+    },
+    "confirms": {
+      "deleteSeries": "Delete \"{{name}}\"? Videos will keep no series.",
+      "deleteVideo": "Delete \"{{name}}\"?",
+      "deleteManual": "Delete \"{{name}}\"?",
+      "deleteCategory": "Delete \"{{name}}\"? Its videos will keep no category.",
+      "promote": "Promote \"{{name}}\" to admin?",
+      "demote": "Remove admin role from \"{{name}}\"?",
+      "deleteUser": "Permanently delete \"{{name}}\"? This cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "confirm": "Confirm",
+      "title": "Confirm"
+    },
+    "errors": {
+      "titleRequired": "Title is required",
+      "thumbnailRequired": "Upload a thumbnail",
+      "videoRequired": "Upload a video",
+      "pdfRequired": "Upload at least one PDF (EN or ES)",
+      "categoryRequired": "Select a category",
+      "save": "Failed to save",
+      "load": "Failed to load"
+    },
+    "users": {
+      "you": "you",
+      "signedUp": "signed up",
+      "lastLogin": "last login",
+      "noName": "(no name)",
+      "searchPlaceholder": "Search by name or email",
+      "promote": "Promote to admin",
+      "demote": "Remove admin",
+      "delete": "Delete user",
+      "noResults": "No results."
+    },
+    "series": {
+      "empty": "No series yet. Tap + to create your first one.",
+      "placeholderTitleEn": "BTT Writer · Complete Course",
+      "placeholderTitleEs": "BTT Writer · Curso Completo"
+    },
+    "uploader": {
+      "select": "Select file",
+      "replace": "Replace file",
+      "uploading": "Uploading {{size}} MB..."
     }
   }
 }

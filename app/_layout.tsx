@@ -4,6 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Platform, StyleSheet, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { AudioPlayerProvider } from '@/lib/audioPlayer';
+import { DownloadsProvider } from '@/lib/downloads';
 import { ToastProvider } from '@/components/Toast';
 import { initI18n } from '@/lib/i18n';
 import { hasSeenOnboarding } from '@/app/(auth)/onboarding';
@@ -21,7 +23,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     hasSeenOnboarding().then(setOnboarded);
-  }, []);
+  }, [segments]);
 
   useEffect(() => {
     if (loading || onboarded === null) return;
@@ -68,19 +70,23 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <ToastProvider>
             <AuthProvider>
-              <AuthGate>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: colors.bg },
-                    animation: 'fade',
-                  }}
-                >
-                  <Stack.Screen name="(auth)" />
-                  <Stack.Screen name="(app)" />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-              </AuthGate>
+              <DownloadsProvider>
+                <AudioPlayerProvider>
+                  <AuthGate>
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: colors.bg },
+                        animation: 'fade',
+                      }}
+                    >
+                      <Stack.Screen name="(auth)" />
+                      <Stack.Screen name="(app)" />
+                      <Stack.Screen name="+not-found" />
+                    </Stack>
+                  </AuthGate>
+                </AudioPlayerProvider>
+              </DownloadsProvider>
             </AuthProvider>
           </ToastProvider>
         </SafeAreaProvider>

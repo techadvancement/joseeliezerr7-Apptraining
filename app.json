@@ -18,7 +18,8 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos so you can pick a profile picture."
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos so you can pick a profile picture.",
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -16,36 +16,42 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { VideoCard } from '@/components/VideoCard';
 import { ManualCard } from '@/components/ManualCard';
 import { CategoryTile } from '@/components/CategoryTile';
+import { SeriesCard } from '@/components/SeriesCard';
+import { FeaturedHero } from '@/components/FeaturedHero';
 import { useAuth } from '@/lib/auth';
 import {
   fetchCategories,
   fetchManuals,
+  fetchSeries,
   fetchVideos,
   USING_MOCKS,
 } from '@/lib/api';
 import { listContinueWatching } from '@/lib/progress';
-import type { Manual, Video, VideoCategory } from '@/lib/supabase';
+import type { Manual, Series, Video, VideoCategory } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/constants/theme';
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { user, profile } = useAuth();
   const [categories, setCategories] = useState<VideoCategory[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [series, setSeries] = useState<Series[]>([]);
   const [continueVideos, setContinueVideos] = useState<Video[]>([]);
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   async function load() {
-    const [c, v, m] = await Promise.all([
+    const [c, v, m, s] = await Promise.all([
       fetchCategories(),
       fetchVideos(),
       fetchManuals(),
+      fetchSeries(),
     ]);
     setCategories(c);
     setVideos(v);
-    setManuals(m.slice(0, 3));
+    setManuals(m.slice(0, 8));
+    setSeries(s);
 
     if (user) {
       const progress = await listContinueWatching(user.id, 8).catch(() => []);
@@ -65,6 +71,47 @@ export default function HomeScreen() {
   }
 
   const featured = videos[0];
+  const latestVideos = useMemo(() => videos.slice(1, 7), [videos]);
+
+  const { topCategory, topCategoryVideos, topCategoryCount, otherCategories } = useMemo(() => {
+    if (!categories.length) {
+      return {
+        topCategory: null as VideoCategory | null,
+        topCategoryVideos: [] as Video[],
+        topCategoryCount: 0,
+        otherCategories: [] as VideoCategory[],
+      };
+    }
+    const counts = new Map<string, number>();
+    for (const v of videos) {
+      counts.set(v.category_id, (counts.get(v.category_id) ?? 0) + 1);
+    }
+    let topId: string | null = null;
+    let max = 0;
+    for (const [cid, cnt] of counts.entries()) {
+      if (cnt > max) {
+        max = cnt;
+        topId = cid;
+      }
+    }
+    const cat = topId ? categories.find((c) => c.id === topId) ?? null : null;
+    const rest = cat ? categories.filter((c) => c.id !== cat.id) : categories;
+    const railVideos = topId
+      ? videos.slice(1).filter((v) => v.category_id === topId).slice(0, 6)
+      : [];
+    return {
+      topCategory: cat,
+      topCategoryVideos: railVideos,
+      topCategoryCount: topId ? counts.get(topId) ?? 0 : 0,
+      otherCategories: rest,
+    };
+  }, [categories, videos]);
+
+  const topCategoryName = topCategory
+    ? i18n.language === 'es'
+      ? topCategory.name_es
+      : topCategory.name_en
+    : '';
 
   return (
     <Screen padded={false}>
@@ -99,27 +146,88 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {featured ? (
-          <View style={styles.featuredWrap}>
-            <SectionHeader title={t('home.featured')} />
-            <VideoCard video={featured} size="lg" />
+        {featured ? <FeaturedHero video={featured} /> : null}
+
+        {latestVideos.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader
+              title={t('home.newVideos')}
+              action={t('common.seeAll')}
+              onActionPress={() => router.push('/videos')}
+            />
+            <FlatList
+              data={latestVideos}
+              horizontal
+              keyExtractor={(v) => v.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing.lg, paddingRight: spacing.lg, alignItems: 'flex-start' }}
+              style={{ flexGrow: 0 }}
+              renderItem={({ item }) => <VideoCard video={item} size="md" />}
+            />
+          </View>
+        ) : null}
+
+        {series.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader
+              title={t('series.title')}
+              action={t('common.seeAll')}
+              onActionPress={() => router.push('/videos')}
+            />
+            <FlatList
+              data={series}
+              horizontal
+              keyExtractor={(s) => s.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing.lg, paddingRight: spacing.lg, alignItems: 'flex-start' }}
+              style={{ flexGrow: 0 }}
+              renderItem={({ item }) => <SeriesCard series={item} size="md" />}
+            />
           </View>
         ) : null}
 
         <View style={styles.section}>
           <SectionHeader title={t('home.categories')} />
-          <View style={styles.grid}>
-            {categories.map((c) => (
-              <View key={c.id} style={styles.gridItem}>
-                <CategoryTile category={c} />
-              </View>
-            ))}
-          </View>
+          {topCategory ? (
+            <CategoryTile category={topCategory} variant="feature" count={topCategoryCount} />
+          ) : null}
+          {otherCategories.length > 0 ? (
+            <View style={[styles.grid, topCategory && { marginTop: spacing.md }]}>
+              {otherCategories.map((c) => (
+                <View key={c.id} style={styles.gridItem}>
+                  <CategoryTile category={c} />
+                </View>
+              ))}
+            </View>
+          ) : null}
         </View>
+
+        {topCategory && topCategoryVideos.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader
+              title={t('home.fromCategory', { category: topCategoryName })}
+              action={t('common.seeAll')}
+              onActionPress={() => router.push(`/videos/${topCategory.slug}`)}
+            />
+            <FlatList
+              data={topCategoryVideos}
+              horizontal
+              keyExtractor={(v) => v.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing.lg, paddingRight: spacing.lg, alignItems: 'flex-start' }}
+              style={{ flexGrow: 0 }}
+              renderItem={({ item }) => <VideoCard video={item} size="md" />}
+            />
+          </View>
+        ) : null}
 
         {continueVideos.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader title={t('home.continueWatching')} />
+            <SectionHeader
+              title={t('home.continueWatching')}
+              action={t('common.seeAll')}
+              onActionPress={() => router.push('/videos')}
+            />
             <FlatList
               data={continueVideos}
               horizontal
@@ -132,14 +240,26 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <View style={styles.section}>
-          <SectionHeader title={t('home.latestManuals')} />
-          <View style={{ gap: spacing.md }}>
-            {manuals.map((m) => (
-              <ManualCard key={m.id} manual={m} />
-            ))}
+        {manuals.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader
+              title={t('home.latestManuals')}
+              action={t('common.seeAll')}
+              onActionPress={() => router.push('/manuals')}
+            />
+            <FlatList
+              data={manuals}
+              horizontal
+              keyExtractor={(m) => m.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing.lg, paddingRight: spacing.lg, alignItems: 'flex-start' }}
+              style={{ flexGrow: 0 }}
+              renderItem={({ item }) => (
+                <ManualCard manual={item} variant="cover" width={140} />
+              )}
+            />
           </View>
-        </View>
+        ) : null}
       </ScrollView>
     </Screen>
   );
@@ -174,7 +294,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   noticeText: { color: colors.textMuted, ...typography.caption },
-  featuredWrap: { paddingHorizontal: spacing.lg },
   section: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   gridItem: { width: '48%', flexGrow: 1, height: 120 },

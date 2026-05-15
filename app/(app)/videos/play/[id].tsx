@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { ResizeMode, Video } from 'expo-av';
 import { Screen } from '@/components/ui/Screen';
 import { BookmarkButton } from '@/components/BookmarkButton';
+import { BottomSheet, BottomSheetOption } from '@/components/BottomSheet';
+import { DownloadButton } from '@/components/DownloadButton';
 import { VideoCard } from '@/components/VideoCard';
 import { VideoNotes } from '@/components/VideoNotes';
 import { VideoChapters } from '@/components/VideoChapters';
@@ -27,6 +29,8 @@ import {
   fetchVideo,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useAudioPlayer } from '@/lib/audioPlayer';
+import { useDownloads } from '@/lib/downloads';
 import { getProgress, percentWatched, saveProgress } from '@/lib/progress';
 import { shareItem } from '@/lib/share';
 import type { Video as VideoT, VideoCategory } from '@/lib/supabase';
@@ -40,7 +44,10 @@ export default function VideoPlayer() {
   const router = useRouter();
   const toast = useToast();
   const { user } = useAuth();
+  const audio = useAudioPlayer();
+  const downloads = useDownloads();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const handoffAppliedRef = useRef(false);
   const [video, setVideo] = useState<VideoT | null>(null);
   const [category, setCategory] = useState<VideoCategory | null>(null);
   const [related, setRelated] = useState<VideoT[]>([]);
@@ -49,6 +56,7 @@ export default function VideoPlayer() {
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [progressPercent, setProgressPercent] = useState(0);
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
+  const [speedSheetOpen, setSpeedSheetOpen] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [ended, setEnded] = useState(false);
   const ref = useRef<Video | null>(null);
@@ -87,6 +95,19 @@ export default function VideoPlayer() {
     }
   }, [speed]);
 
+  useEffect(() => {
+    if (handoffAppliedRef.current) return;
+    if (!audio.track) return;
+    handoffAppliedRef.current = true;
+    const sameTrack = String(audio.track.id) === String(id);
+    const pos = audio.position;
+    audio.stop();
+    if (sameTrack && pos > 5) {
+      setResumeAt(pos);
+      setCurrentSeconds(pos);
+    }
+  }, [id, audio]);
+
   function seekTo(seconds: number) {
     setCurrentSeconds(seconds);
     if (Platform.OS === 'web' && webRef.current) {
@@ -119,6 +140,28 @@ export default function VideoPlayer() {
     }
   }
 
+  async function minimizeToAudio() {
+    if (!video) return;
+    let pos = currentSeconds;
+    if (Platform.OS === 'web' && webRef.current) {
+      pos = webRef.current.currentTime || pos;
+      webRef.current.pause();
+    } else if (ref.current) {
+      const status = await ref.current.getStatusAsync().catch(() => null);
+      if (status && status.isLoaded) {
+        pos = (status.positionMillis ?? 0) / 1000;
+      }
+      await ref.current.pauseAsync().catch(() => {});
+    }
+    handoffAppliedRef.current = true;
+    try {
+      await audio.play(video, pos);
+      router.back();
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Audio error');
+    }
+  }
+
   const upNext = related[0] ?? null;
 
   function playUpNext() {
@@ -140,6 +183,7 @@ export default function VideoPlayer() {
     [category, i18n.language]
   );
   const longDesc = (desc?.length ?? 0) > 180;
+  const videoUri = video ? downloads.getLocalUri(video.id) ?? video.video_url : '';
 
   if (loading) {
     return (
@@ -176,7 +220,7 @@ export default function VideoPlayer() {
                     }
                   }
                 }}
-                src={video.video_url}
+                src={videoUri}
                 poster={video.thumbnail_url}
                 controls
                 playsInline
@@ -188,7 +232,7 @@ export default function VideoPlayer() {
             ) : (
               <Video
                 ref={ref}
-                source={{ uri: video.video_url }}
+                source={{ uri: videoUri }}
                 useNativeControls
                 resizeMode={ResizeMode.CONTAIN}
                 shouldPlay={false}
@@ -214,6 +258,14 @@ export default function VideoPlayer() {
               style={styles.topBtn}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
+            </Pressable>
+            <Pressable
+              onPress={minimizeToAudio}
+              hitSlop={12}
+              style={styles.topBtn}
+              accessibilityLabel={t('videos.listenAudio')}
+            >
+              <Ionicons name="headset" size={20} color="#fff" />
             </Pressable>
           </View>
 
@@ -291,6 +343,16 @@ export default function VideoPlayer() {
               <BookmarkButton type="video" id={video.id} size={20} />
               <Text style={styles.actionLabel}>{t('videos.save')}</Text>
             </View>
+            <View style={styles.action}>
+              <DownloadButton video={video} iconSize={20} />
+              <Text style={styles.actionLabel}>
+                {downloads.status(video.id).state === 'done'
+                  ? t('videos.downloaded')
+                  : downloads.status(video.id).state === 'downloading'
+                  ? t('videos.downloading')
+                  : t('videos.download')}
+              </Text>
+            </View>
             <Pressable
               onPress={onShare}
               style={({ pressed }) => [styles.action, pressed && { opacity: 0.7 }]}
@@ -301,10 +363,7 @@ export default function VideoPlayer() {
               <Text style={styles.actionLabel}>{t('videos.share')}</Text>
             </Pressable>
             <Pressable
-              onPress={() => {
-                const idx = SPEEDS.indexOf(speed);
-                setSpeed(SPEEDS[(idx + 1) % SPEEDS.length]!);
-              }}
+              onPress={() => setSpeedSheetOpen(true)}
               style={({ pressed }) => [styles.action, pressed && { opacity: 0.7 }]}
             >
               <View style={styles.actionIconWrap}>
@@ -313,6 +372,24 @@ export default function VideoPlayer() {
               <Text style={styles.actionLabel}>{speed}x</Text>
             </Pressable>
           </View>
+
+          <BottomSheet
+            visible={speedSheetOpen}
+            onClose={() => setSpeedSheetOpen(false)}
+            title={t('videos.playbackSpeed')}
+          >
+            {SPEEDS.map((s) => (
+              <BottomSheetOption
+                key={s}
+                label={s === 1 ? t('videos.normal') : `${s}x`}
+                selected={s === speed}
+                onPress={() => {
+                  setSpeed(s);
+                  setSpeedSheetOpen(false);
+                }}
+              />
+            ))}
+          </BottomSheet>
 
           {desc ? (
             <View style={styles.descCard}>

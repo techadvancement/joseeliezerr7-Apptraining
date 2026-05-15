@@ -205,3 +205,8 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
 }
+
+export function useIsAdmin(): boolean {
+  const { profile } = useAuth();
+  return profile?.role === 'admin';
+}

@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { supabase, type Manual, type Video, type VideoCategory } from './supabase';
+import { supabase, type Manual, type Series, type Video, type VideoCategory } from './supabase';
 import { MOCK_CATEGORIES, MOCK_MANUALS, MOCK_VIDEOS } from './mockData';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
@@ -104,4 +104,55 @@ export async function fetchManual(id: string): Promise<Manual | null> {
     .maybeSingle();
   if (error) throw error;
   return data as Manual | null;
+}
+
+// =========================
+// Series
+// =========================
+export async function fetchSeries(opts: { featuredOnly?: boolean } = {}): Promise<Series[]> {
+  if (!hasSupabase) return [];
+  let q = supabase
+    .from('series')
+    .select('*, videos:videos(duration_seconds)')
+    .order('order_index', { ascending: true });
+  if (opts.featuredOnly) q = q.eq('featured', true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []).map((s: any) => ({
+    ...s,
+    video_count: s.videos?.length ?? 0,
+    total_duration_seconds:
+      (s.videos ?? []).reduce((sum: number, v: any) => sum + (v.duration_seconds ?? 0), 0),
+    videos: undefined,
+  })) as Series[];
+}
+
+export async function fetchSeriesById(id: string): Promise<Series | null> {
+  if (!hasSupabase) return null;
+  const { data, error } = await supabase
+    .from('series')
+    .select('*, videos:videos(duration_seconds)')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const s: any = data;
+  return {
+    ...s,
+    video_count: s.videos?.length ?? 0,
+    total_duration_seconds:
+      (s.videos ?? []).reduce((sum: number, v: any) => sum + (v.duration_seconds ?? 0), 0),
+    videos: undefined,
+  } as Series;
+}
+
+export async function fetchSeriesVideos(seriesId: string): Promise<Video[]> {
+  if (!hasSupabase) return [];
+  const { data, error } = await supabase
+    .from('videos')
+    .select('*')
+    .eq('series_id', seriesId)
+    .order('series_position', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Video[];
 }

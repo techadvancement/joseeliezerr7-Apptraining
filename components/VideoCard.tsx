@@ -5,6 +5,7 @@ import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
 import { formatBytes, formatDuration } from '@/lib/format';
+import { useDownloads } from '@/lib/downloads';
 import type { Video } from '@/lib/supabase';
 
 type Size = 'sm' | 'md' | 'lg';
@@ -23,9 +24,11 @@ export function VideoCard({
   size?: Size;
 }) {
   const { i18n, t } = useTranslation();
+  const downloads = useDownloads();
   const lang = i18n.language;
   const title = lang === 'es' ? video.title_es : video.title_en;
   const dims = sizeMap[size];
+  const downloaded = downloads.isDownloaded(video.id);
 
   return (
     <Link href={`/videos/play/${video.id}`} asChild>
@@ -46,6 +49,11 @@ export function VideoCard({
           {video.resolution ? (
             <View style={styles.quality}>
               <Text style={styles.qualityText}>{video.resolution}</Text>
+            </View>
+          ) : null}
+          {downloaded ? (
+            <View style={styles.downloaded}>
+              <Ionicons name="cloud-done" size={11} color="#fff" />
             </View>
           ) : null}
         </View>
@@ -94,6 +102,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   qualityText: { color: '#fff', ...typography.caption, fontWeight: '700' },
+  downloaded: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: { ...typography.bodyBold, color: colors.text },
   meta: { ...typography.caption, color: colors.textMuted },
 });
