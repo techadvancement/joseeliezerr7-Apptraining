@@ -16,9 +16,18 @@ export type Responsive = {
 };
 
 export function useResponsive(): Responsive {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   if (Platform.OS !== 'web') {
-    return { width, isPhone: true, isTablet: false, isDesktop: false, columns: 2 };
+    // Detect tablets by shortest side (Android sw600dp / iPad convention),
+    // so a phone in landscape doesn't accidentally trigger the sidebar.
+    const isTablet = Math.min(width, height) >= 600;
+    return {
+      width,
+      isPhone: !isTablet,
+      isTablet,
+      isDesktop: false,
+      columns: isTablet ? 3 : 2,
+    };
   }
   const isHuge = width >= BREAKPOINTS.huge;
   const isLarge = !isHuge && width >= BREAKPOINTS.large;
