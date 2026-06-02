@@ -16,6 +16,9 @@ android/
 .env.local
 .env.*.local
 
+# Play Store credentials (contains a real Supabase password)
+assets/play-store/app-access.txt
+
 # Editor
 .vscode/
 .idea/
