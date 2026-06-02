@@ -16,6 +16,7 @@ import { useToast } from '@/components/Toast';
 import { fetchSeriesById, fetchSeriesVideos } from '@/lib/api';
 import { listContinueWatching, percentWatched } from '@/lib/progress';
 import { useAuth } from '@/lib/auth';
+import { thumb } from '@/lib/image';
 import type { Series, Video } from '@/lib/supabase';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
 import { formatDuration } from '@/lib/format';
@@ -102,15 +103,12 @@ export default function SeriesDetail() {
         <View style={styles.hero}>
           {series.thumbnail_url ? (
             <Image
-              source={series.thumbnail_url}
+              source={thumb(series.thumbnail_url, 1280, { quality: 75 })}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
               transition={200}
             />
           ) : null}
-          <View style={styles.heroScrim} />
-          <View style={styles.heroBottomScrim} />
-
           <View style={styles.topBar}>
             <Pressable onPress={() => router.back()} hitSlop={12} style={styles.topBtn}>
               <Ionicons name="chevron-back" size={22} color="#fff" />
@@ -144,7 +142,12 @@ export default function SeriesDetail() {
               </View>
               {firstUnwatched ? (
                 <Pressable
-                  onPress={() => router.push(`/videos/play/${firstUnwatched.id}`)}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/videos/play/[id]',
+                      params: { id: firstUnwatched.id, from: `/series/${id}` },
+                    })
+                  }
                   style={({ pressed }) => [styles.playBtn, pressed && { opacity: 0.85 }]}
                 >
                   <Ionicons name="play" size={18} color="#fff" />
@@ -178,7 +181,12 @@ export default function SeriesDetail() {
               return (
                 <Pressable
                   key={v.id}
-                  onPress={() => router.push(`/videos/play/${v.id}`)}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/videos/play/[id]',
+                      params: { id: v.id, from: `/series/${id}` },
+                    })
+                  }
                   style={({ pressed }) => [styles.lessonRow, pressed && { opacity: 0.85 }]}
                 >
                   <View style={[styles.lessonNum, completed && styles.lessonNumDone]}>
@@ -188,7 +196,7 @@ export default function SeriesDetail() {
                       <Text style={styles.lessonNumText}>{idx + 1}</Text>
                     )}
                   </View>
-                  <Image source={v.thumbnail_url} style={styles.lessonThumb} contentFit="cover" />
+                  <Image source={thumb(v.thumbnail_url, 200)} style={styles.lessonThumb} contentFit="cover" />
                   <View style={{ flex: 1 }}>
                     <Text numberOfLines={2} style={styles.lessonTitle}>{vTitle}</Text>
                     <View style={styles.lessonMetaRow}>
@@ -226,18 +234,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'flex-end',
   },
-  heroScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(11,15,26,0.4)',
-  },
-  heroBottomScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '60%',
-    backgroundColor: 'rgba(11,15,26,0.85)',
-  },
   topBar: {
     position: 'absolute',
     top: spacing.md,
@@ -268,10 +264,31 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  title: { ...typography.h1, color: '#fff', fontSize: 26, marginTop: 4 },
-  meta: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
+  title: {
+    ...typography.h1,
+    color: '#fff',
+    fontSize: 26,
+    marginTop: 4,
+    textShadowColor: 'rgba(0,0,0,0.95)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 12,
+  },
+  meta: {
+    color: '#fff',
+    fontSize: 13,
+    textShadowColor: 'rgba(0,0,0,0.95)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
+  },
 
-  body: { padding: spacing.lg, gap: spacing.lg, marginTop: -spacing.md },
+  body: {
+    width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
+    padding: spacing.lg,
+    gap: spacing.lg,
+    marginTop: -spacing.md,
+  },
 
   progressCard: {
     flexDirection: 'row',

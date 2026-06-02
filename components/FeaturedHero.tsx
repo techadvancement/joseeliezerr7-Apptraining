@@ -1,54 +1,63 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
 import { formatDuration } from '@/lib/format';
+import { haptics } from '@/lib/haptics';
+import { thumb } from '@/lib/image';
 import type { Video } from '@/lib/supabase';
 
 export function FeaturedHero({ video }: { video: Video }) {
   const { t, i18n } = useTranslation();
+  const pathname = usePathname();
   const lang = i18n.language;
   const title = lang === 'es' ? video.title_es : video.title_en;
 
   return (
-    <Link href={`/videos/play/${video.id}`} asChild>
+    <Link
+      href={{
+        pathname: '/videos/play/[id]',
+        params: { id: video.id, from: pathname || '/' },
+      }}
+      asChild
+    >
       <Pressable
+        onPressIn={() => haptics.medium()}
+        accessibilityRole="button"
+        accessibilityLabel={`${t('a11y.play')}: ${title}`}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         <View style={styles.imageWrap}>
           <Image
-            source={video.thumbnail_url}
+            source={thumb(video.thumbnail_url, 1280, { quality: 75 })}
             contentFit="cover"
             transition={250}
             style={StyleSheet.absoluteFill}
           />
-          <View style={styles.scrimTop} />
-          <View style={styles.scrimBottom} />
-
           <View style={styles.topBadge}>
             <Ionicons name="star" size={11} color="#fff" />
             <Text style={styles.topBadgeText}>{t('home.featured')}</Text>
           </View>
+        </View>
 
-          <View style={styles.bottomContent}>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text numberOfLines={2} style={styles.title}>{title}</Text>
-              <View style={styles.metaRow}>
-                {video.instructor ? (
-                  <>
-                    <Text style={styles.meta}>{video.instructor}</Text>
-                    <Text style={styles.metaDot}>·</Text>
-                  </>
-                ) : null}
-                <Ionicons name="time" size={11} color="rgba(255,255,255,0.85)" />
-                <Text style={styles.meta}>{formatDuration(video.duration_seconds)}</Text>
-              </View>
+        <View style={styles.bottomContent}>
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={styles.title}>{title}</Text>
+            <View style={styles.metaRow}>
+              {video.instructor ? (
+                <>
+                  <Text style={styles.meta}>{video.instructor}</Text>
+                  <Text style={styles.metaDot}>·</Text>
+                </>
+              ) : null}
+              <Ionicons name="time" size={11} color={colors.textMuted} />
+              <Text style={styles.meta}>{formatDuration(video.duration_seconds)}</Text>
             </View>
-            <View style={styles.playBtn}>
-              <Ionicons name="play" size={22} color="#fff" />
-            </View>
+          </View>
+          <View style={styles.playBtn}>
+            <Ionicons name="play" size={22} color="#fff" />
           </View>
         </View>
       </Pressable>
@@ -59,32 +68,18 @@ export function FeaturedHero({ video }: { video: Video }) {
 const styles = StyleSheet.create({
   card: {
     width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
     overflow: 'hidden',
+    borderRadius: radius.lg,
     backgroundColor: colors.surfaceAlt,
     ...shadow.card,
   },
   pressed: { opacity: 0.95 },
   imageWrap: {
     width: '100%',
-    aspectRatio: 16 / 10,
+    aspectRatio: 16 / 9,
     position: 'relative',
-    justifyContent: 'flex-end',
-  },
-  scrimTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '40%',
-    backgroundColor: 'rgba(11,15,26,0.35)',
-  },
-  scrimBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-    backgroundColor: 'rgba(11,15,26,0.78)',
   },
   topBadge: {
     position: 'absolute',
@@ -106,21 +101,29 @@ const styles = StyleSheet.create({
   },
   bottomContent: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: spacing.md,
+    backgroundColor: colors.surface,
   },
   title: {
     ...typography.h1,
-    color: '#fff',
-    fontSize: 24,
-    lineHeight: 28,
-    letterSpacing: -0.4,
+    color: colors.text,
+    fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: -0.3,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  meta: { color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: '600' },
-  metaDot: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
+  meta: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  metaDot: {
+    color: colors.textSubtle,
+    fontSize: 12,
+  },
   playBtn: {
     width: 52,
     height: 52,

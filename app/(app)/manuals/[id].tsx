@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -9,26 +8,28 @@ import {
   Text,
   View,
 } from 'react-native';
-import WebView from 'react-native-webview';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { BookmarkButton } from '@/components/BookmarkButton';
+import { PdfViewer } from '@/components/PdfViewer';
 import { useToast } from '@/components/Toast';
 import { fetchManual } from '@/lib/api';
 import { downloadAndShare } from '@/lib/download';
+import { thumb } from '@/lib/image';
+import { useSmartBack, useSystemBack } from '@/lib/navHistory';
+import { openExternal } from '@/lib/openExternal';
 import type { Manual } from '@/lib/supabase';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
 
 export default function ManualDetail() {
   const { t, i18n } = useTranslation();
-  const router = useRouter();
+  const smartBack = useSmartBack();
   const toast = useToast();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const [manual, setManual] = useState<Manual | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -45,7 +46,7 @@ export default function ManualDetail() {
           else if (!m.pdf_url_es && m.pdf_url_en) setLang('en');
         }
       })
-      .catch((e) => console.warn(e))
+      .catch(() => toast.error(t('common.loadFailed')))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -53,6 +54,8 @@ export default function ManualDetail() {
     if (!manual) return null;
     return lang === 'es' ? manual.pdf_url_es : manual.pdf_url_en;
   }, [manual, lang]);
+
+  useSystemBack(() => goBack());
 
   if (loading) {
     return (
@@ -65,7 +68,7 @@ export default function ManualDetail() {
   if (!manual) {
     return (
       <Screen>
-        <Text style={{ color: colors.text }}>Not found</Text>
+        <Text style={{ color: colors.text }}>{t('notFound.title')}</Text>
       </Screen>
     );
   }
@@ -74,15 +77,9 @@ export default function ManualDetail() {
   const desc =
     i18n.language === 'es' ? manual.description_es : manual.description_en;
 
-  async function openExternal() {
+  async function onOpenExternal() {
     if (!pdfUrl) return;
-    if (Platform.OS === 'web') {
-      window.open(pdfUrl, '_blank');
-    } else {
-      await WebBrowser.openBrowserAsync(pdfUrl).catch(() =>
-        Linking.openURL(pdfUrl)
-      );
-    }
+    await openExternal(pdfUrl);
   }
 
   async function onDownload() {
@@ -94,10 +91,21 @@ export default function ManualDetail() {
       await downloadAndShare(pdfUrl, filename);
       if (Platform.OS !== 'web') toast.success(t('manuals.downloaded'));
     } catch (err: any) {
-      toast.error(err?.message ?? 'Download failed');
+      toast.error(err?.message ?? t('videos.downloadFailed'));
     } finally {
       setDownloading(false);
     }
+  }
+
+  function goBack() {
+    let target: string | undefined;
+    if (from) {
+      target = from;
+      try {
+        if (target.includes('%')) target = decodeURIComponent(target);
+      } catch {}
+    }
+    smartBack('/manuals', target);
   }
 
   const langOptions: { code: 'en' | 'es'; label: string; flag: string; available: boolean }[] = [
@@ -114,7 +122,7 @@ export default function ManualDetail() {
         <View style={styles.hero}>
           <View style={styles.topBar}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={goBack}
               hitSlop={12}
               style={styles.topBtn}
             >
@@ -128,7 +136,7 @@ export default function ManualDetail() {
           <View style={styles.heroContent}>
             <View style={styles.thumbShadow}>
               <Image
-                source={manual.thumbnail_url}
+                source={thumb(manual.thumbnail_url, 360)}
                 style={styles.thumb}
                 contentFit="cover"
                 transition={200}
@@ -164,13 +172,13 @@ export default function ManualDetail() {
             <View style={styles.metaCard}>
               <Ionicons name="document-attach-outline" size={18} color={colors.primary} />
               <Text style={styles.metaValue}>PDF</Text>
-              <Text style={styles.metaLabel}>Format</Text>
+              <Text style={styles.metaLabel}>{t('manuals.format')}</Text>
             </View>
           </View>
 
           {desc ? (
             <View style={styles.descCard}>
-              <Text style={styles.cardTitle}>About</Text>
+              <Text style={styles.cardTitle}>{t('manuals.about')}</Text>
               <Text style={styles.desc}>{desc}</Text>
             </View>
           ) : null}
@@ -204,7 +212,7 @@ export default function ManualDetail() {
           {/* Action buttons */}
           <View style={styles.actions}>
             <Pressable
-              onPress={openExternal}
+              onPress={onOpenExternal}
               style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.85 }]}
             >
               <Ionicons name="open-outline" size={18} color={colors.text} />
@@ -239,28 +247,7 @@ export default function ManualDetail() {
                 <Text style={styles.viewerTitle}>{title}.pdf</Text>
               </View>
               <View style={styles.viewerBody}>
-                {Platform.OS === 'web' ? (
-                  <iframe
-                    src={pdfUrl}
-                    style={{
-                      width: '100%',
-                      height: 620,
-                      border: 'none',
-                      background: '#fff',
-                    }}
-                  />
-                ) : (
-                  <WebView
-                    source={{
-                      uri:
-                        Platform.OS === 'android'
-                          ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(pdfUrl)}`
-                          : pdfUrl,
-                    }}
-                    style={{ flex: 1, backgroundColor: '#fff' }}
-                    startInLoadingState
-                  />
-                )}
+                <PdfViewer url={pdfUrl} />
               </View>
             </View>
           ) : null}
@@ -273,10 +260,7 @@ export default function ManualDetail() {
 const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing.xxxl },
   hero: {
-    backgroundColor: colors.bgElevated,
     paddingBottom: spacing.xl,
-    borderBottomLeftRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
   },
   topBar: {
     flexDirection: 'row',
@@ -307,6 +291,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   heroContent: {
+    width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
     alignItems: 'center',
     paddingTop: spacing.md,
   },

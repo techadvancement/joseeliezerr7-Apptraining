@@ -49,6 +49,7 @@ export default function DeleteAccountScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <View style={styles.inner}>
           <View style={styles.headerRow}>
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <Ionicons name="chevron-back" size={26} color={colors.text} />
@@ -84,6 +85,7 @@ export default function DeleteAccountScreen() {
               fullWidth
             />
           </View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -91,7 +93,8 @@ export default function DeleteAccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxxl },
+  container: { alignItems: 'center', paddingBottom: spacing.xxxl },
+  inner: { width: '100%', maxWidth: 640, padding: spacing.lg, gap: spacing.xl },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h2, color: colors.text },
   warningBox: {

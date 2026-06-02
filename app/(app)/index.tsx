@@ -10,63 +10,97 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
+import { useResponsive } from '@/lib/responsive';
 import { SectionHeader } from '@/components/SectionHeader';
 import { VideoCard } from '@/components/VideoCard';
 import { ManualCard } from '@/components/ManualCard';
 import { CategoryTile } from '@/components/CategoryTile';
 import { SeriesCard } from '@/components/SeriesCard';
 import { FeaturedHero } from '@/components/FeaturedHero';
+import { AccountMenu } from '@/components/AccountMenu';
+import {
+  CategoryTileSkeleton,
+  HeroSkeleton,
+  RailSkeleton,
+  SectionHeaderSkeleton,
+} from '@/components/Skeleton';
+import { useToast } from '@/components/Toast';
 import { useAuth } from '@/lib/auth';
 import {
   fetchCategories,
   fetchManuals,
   fetchSeries,
+  fetchVideoCategoryIds,
   fetchVideos,
   USING_MOCKS,
 } from '@/lib/api';
-import { listContinueWatching } from '@/lib/progress';
+import { listContinueWatching, type Progress } from '@/lib/progress';
+import { thumb } from '@/lib/image';
+import { ResumeBanner } from '@/components/ResumeBanner';
 import type { Manual, Series, Video, VideoCategory } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/constants/theme';
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const toast = useToast();
   const { user, profile } = useAuth();
+  const { columns, isPhone } = useResponsive();
   const [categories, setCategories] = useState<VideoCategory[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [series, setSeries] = useState<Series[]>([]);
-  const [continueVideos, setContinueVideos] = useState<Video[]>([]);
+  const [continueItems, setContinueItems] = useState<{ video: Video; progress: Progress }[]>([]);
   const [manuals, setManuals] = useState<Manual[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Map<string, number>>(new Map());
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const avatarInitial = (profile?.full_name ?? user?.email ?? '?')[0]?.toUpperCase() ?? '?';
 
   async function load() {
-    const [c, v, m, s] = await Promise.all([
+    const [c, v, m, s, vCatIds] = await Promise.all([
       fetchCategories(),
-      fetchVideos(),
-      fetchManuals(),
-      fetchSeries(),
+      fetchVideos(undefined, { limit: 30 }),
+      fetchManuals(undefined, { limit: 8 }),
+      fetchSeries({ limit: 12 }),
+      fetchVideoCategoryIds().catch(() => [] as { category_id: string }[]),
     ]);
     setCategories(c);
     setVideos(v);
-    setManuals(m.slice(0, 8));
+    setManuals(m);
     setSeries(s);
+
+    const counts = new Map<string, number>();
+    for (const row of vCatIds) {
+      counts.set(row.category_id, (counts.get(row.category_id) ?? 0) + 1);
+    }
+    setCategoryCounts(counts);
 
     if (user) {
       const progress = await listContinueWatching(user.id, 8).catch(() => []);
       const byId = new Map(v.map((x) => [x.id, x] as const));
-      setContinueVideos(progress.map((p) => byId.get(p.video_id)).filter(Boolean) as Video[]);
+      const items: { video: Video; progress: Progress }[] = [];
+      for (const p of progress) {
+        const vid = byId.get(p.video_id);
+        if (vid) items.push({ video: vid, progress: p });
+      }
+      setContinueItems(items);
     }
   }
 
   useEffect(() => {
-    load().catch((e) => console.warn('home load error', e));
+    load()
+      .catch(() => toast.error(t('common.loadFailed')))
+      .finally(() => setLoading(false));
   }, []);
 
   async function onRefresh() {
     setRefreshing(true);
-    await load().catch(() => {});
+    await load().catch(() => toast.error(t('common.loadFailed')));
     setRefreshing(false);
   }
 
@@ -82,13 +116,9 @@ export default function HomeScreen() {
         otherCategories: [] as VideoCategory[],
       };
     }
-    const counts = new Map<string, number>();
-    for (const v of videos) {
-      counts.set(v.category_id, (counts.get(v.category_id) ?? 0) + 1);
-    }
     let topId: string | null = null;
     let max = 0;
-    for (const [cid, cnt] of counts.entries()) {
+    for (const [cid, cnt] of categoryCounts.entries()) {
       if (cnt > max) {
         max = cnt;
         topId = cid;
@@ -102,10 +132,10 @@ export default function HomeScreen() {
     return {
       topCategory: cat,
       topCategoryVideos: railVideos,
-      topCategoryCount: topId ? counts.get(topId) ?? 0 : 0,
+      topCategoryCount: topId ? categoryCounts.get(topId) ?? 0 : 0,
       otherCategories: rest,
     };
-  }, [categories, videos]);
+  }, [categories, videos, categoryCounts]);
 
   const topCategoryName = topCategory
     ? i18n.language === 'es'
@@ -125,17 +155,51 @@ export default function HomeScreen() {
           />
         }
       >
+        <View style={styles.headerGroup}>
+        {isPhone ? (
+          <View style={styles.brandRow}>
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={styles.brandLogo}
+              contentFit="contain"
+            />
+            <Text style={styles.brandName} numberOfLines={1}>
+              {t('common.appName')}
+            </Text>
+          </View>
+        ) : null}
+
         <View style={styles.header}>
+          {isPhone ? (
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              style={({ pressed }) => [styles.avatarBtn, pressed && { opacity: 0.75 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.account')}
+            >
+              {profile?.avatar_url ? (
+                <Image source={thumb(profile.avatar_url, 80)} style={styles.avatarImg} contentFit="cover" />
+              ) : (
+                <Text style={styles.avatarInitial}>{avatarInitial}</Text>
+              )}
+              <View style={styles.avatarCaret}>
+                <Ionicons name="chevron-down" size={10} color={colors.text} />
+              </View>
+            </Pressable>
+          ) : null}
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={styles.greeting}>{t('home.title')}</Text>
-            <Text style={styles.name}>{profile?.full_name ?? ''}</Text>
+            <Text style={styles.name} numberOfLines={1}>{profile?.full_name ?? ''}</Text>
           </View>
-          <Pressable
-            onPress={() => router.push('/search')}
-            style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="search" size={22} color={colors.text} />
-          </Pressable>
+          {isPhone ? (
+            <Pressable
+              onPress={() => router.push('/search')}
+              style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Ionicons name="search" size={22} color={colors.text} />
+            </Pressable>
+          ) : null}
+        </View>
         </View>
 
         {USING_MOCKS ? (
@@ -146,17 +210,59 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {featured ? <FeaturedHero video={featured} /> : null}
+        {loading ? (
+          <>
+            <View style={{ paddingHorizontal: spacing.lg }}>
+              <HeroSkeleton />
+            </View>
+            <View style={styles.section}>
+              <SectionHeaderSkeleton />
+              <RailSkeleton cardWidth={240} count={4} />
+            </View>
+            <View style={styles.section}>
+              <SectionHeaderSkeleton />
+              <RailSkeleton cardWidth={240} count={4} />
+            </View>
+            <View style={styles.section}>
+              <SectionHeaderSkeleton />
+              <View style={styles.grid}>
+                {Array.from({ length: columns * 2 }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={[styles.gridItem, { width: `${100 / columns - 2}%` }]}
+                  >
+                    <CategoryTileSkeleton />
+                  </View>
+                ))}
+              </View>
+            </View>
+          </>
+        ) : null}
 
-        {latestVideos.length > 0 ? (
+        {!loading && featured ? (
+          <View style={styles.heroWrap}>
+            <FeaturedHero video={featured} />
+          </View>
+        ) : null}
+
+        {continueItems.length > 0 ? (
+          <View style={styles.resumeWrap}>
+            <ResumeBanner
+              video={continueItems[0].video}
+              progress={continueItems[0].progress}
+            />
+          </View>
+        ) : null}
+
+        {continueItems.length > 1 ? (
           <View style={styles.section}>
             <SectionHeader
-              title={t('home.newVideos')}
+              title={t('home.continueWatching')}
               action={t('common.seeAll')}
-              onActionPress={() => router.push('/videos')}
+              onActionPress={() => router.push('/profile/library')}
             />
             <FlatList
-              data={latestVideos}
+              data={continueItems.slice(1).map((it) => it.video)}
               horizontal
               keyExtractor={(v) => v.id}
               showsHorizontalScrollIndicator={false}
@@ -186,31 +292,15 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <View style={styles.section}>
-          <SectionHeader title={t('home.categories')} />
-          {topCategory ? (
-            <CategoryTile category={topCategory} variant="feature" count={topCategoryCount} />
-          ) : null}
-          {otherCategories.length > 0 ? (
-            <View style={[styles.grid, topCategory && { marginTop: spacing.md }]}>
-              {otherCategories.map((c) => (
-                <View key={c.id} style={styles.gridItem}>
-                  <CategoryTile category={c} />
-                </View>
-              ))}
-            </View>
-          ) : null}
-        </View>
-
-        {topCategory && topCategoryVideos.length > 0 ? (
+        {latestVideos.length > 0 ? (
           <View style={styles.section}>
             <SectionHeader
-              title={t('home.fromCategory', { category: topCategoryName })}
+              title={t('home.newVideos')}
               action={t('common.seeAll')}
-              onActionPress={() => router.push(`/videos/${topCategory.slug}`)}
+              onActionPress={() => router.push('/videos')}
             />
             <FlatList
-              data={topCategoryVideos}
+              data={latestVideos}
               horizontal
               keyExtractor={(v) => v.id}
               showsHorizontalScrollIndicator={false}
@@ -221,15 +311,15 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {continueVideos.length > 0 ? (
+        {topCategory && topCategoryVideos.length > 0 ? (
           <View style={styles.section}>
             <SectionHeader
-              title={t('home.continueWatching')}
+              title={t('home.fromCategory', { category: topCategoryName })}
               action={t('common.seeAll')}
-              onActionPress={() => router.push('/videos')}
+              onActionPress={() => router.push(`/videos/${topCategory.slug}`)}
             />
             <FlatList
-              data={continueVideos}
+              data={topCategoryVideos}
               horizontal
               keyExtractor={(v) => v.id}
               showsHorizontalScrollIndicator={false}
@@ -260,14 +350,62 @@ export default function HomeScreen() {
             />
           </View>
         ) : null}
+
+        {categories.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader title={t('home.categories')} />
+            <View style={styles.grid}>
+              {categories.map((c) => (
+                <View
+                  key={c.id}
+                  style={[styles.gridItem, { width: `${100 / columns - 2}%` }]}
+                >
+                  <CategoryTile category={c} />
+                </View>
+              ))}
+              {/* Filler tiles so the last row keeps the same column width
+                  instead of the trailing item stretching to 100%. */}
+              {categories.length % columns !== 0
+                ? Array.from({ length: columns - (categories.length % columns) }).map(
+                    (_, i) => (
+                      <View
+                        key={`filler-${i}`}
+                        style={[
+                          styles.gridItem,
+                          styles.gridFiller,
+                          { width: `${100 / columns - 2}%` },
+                        ]}
+                      />
+                    )
+                  )
+                : null}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
+      <AccountMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { paddingVertical: spacing.lg, gap: spacing.xl },
+  headerGroup: { gap: spacing.sm },
+  brandRow: {
+    width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  brandLogo: { width: 36, height: 36, borderRadius: 10 },
+  brandName: { ...typography.h3, color: colors.text, fontSize: 18 },
   header: {
+    width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
     paddingHorizontal: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -285,6 +423,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.primary + '66',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'visible',
+  },
+  avatarImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  avatarInitial: {
+    ...typography.bodyBold,
+    color: colors.text,
+    fontSize: 16,
+  },
+  avatarCaret: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.bg,
+  },
   notice: {
     marginHorizontal: spacing.lg,
     padding: spacing.md,
@@ -295,6 +467,9 @@ const styles = StyleSheet.create({
   },
   noticeText: { color: colors.textMuted, ...typography.caption },
   section: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  resumeWrap: { paddingHorizontal: spacing.lg },
+  heroWrap: { paddingHorizontal: spacing.lg },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  gridItem: { width: '48%', flexGrow: 1, height: 120 },
+  gridItem: { height: 120 },
+  gridFiller: { opacity: 0 },
 });

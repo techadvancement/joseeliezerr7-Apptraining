@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { Platform } from 'react-native';
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import { useAuth } from './auth';
 import { useDownloads } from './downloads';
@@ -42,7 +43,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     Audio.setAudioModeAsync({
-      staysActiveInBackground: true,
+      staysActiveInBackground: Platform.OS === 'ios',
       playsInSilentModeIOS: true,
       shouldDuckAndroid: true,
       interruptionModeIOS: InterruptionModeIOS.DoNotMix,
@@ -82,7 +83,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     sound.setOnPlaybackStatusUpdate((status) => {
       if (!status.isLoaded) {
         if (status.error) {
-          console.warn('[audio] playback error', status.error);
+          if (__DEV__) console.warn('[audio] playback error', status.error);
           stop();
         }
         return;

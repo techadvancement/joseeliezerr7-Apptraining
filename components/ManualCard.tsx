@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
+import { thumb } from '@/lib/image';
 import type { Manual } from '@/lib/supabase';
 
 type Variant = 'row' | 'cover';
@@ -18,6 +19,7 @@ export function ManualCard({
   width?: number;
 }) {
   const { i18n, t } = useTranslation();
+  const pathname = usePathname();
   const lang = i18n.language as 'en' | 'es';
   const title = lang === 'es' ? manual.title_es : manual.title_en;
   const desc =
@@ -26,10 +28,14 @@ export function ManualCard({
     manual.pdf_url_en ? 'EN' : null,
     manual.pdf_url_es ? 'ES' : null,
   ].filter(Boolean) as string[];
+  const linkHref = {
+    pathname: '/manuals/[id]' as const,
+    params: { id: manual.id, from: pathname || '/' },
+  };
 
   if (variant === 'cover') {
     return (
-      <Link href={`/manuals/${manual.id}`} asChild>
+      <Link href={linkHref} asChild>
         <Pressable
           style={({ pressed }) => [
             styles.coverCard,
@@ -37,9 +43,16 @@ export function ManualCard({
             pressed && styles.coverPressed,
           ]}
         >
-          <View style={styles.coverThumbWrap}>
+          <View
+            style={[
+              styles.coverThumbWrap,
+              width
+                ? { width, height: Math.round((width * 11) / 8) }
+                : { width: 140, height: Math.round((140 * 11) / 8) },
+            ]}
+          >
             <Image
-              source={manual.thumbnail_url}
+              source={thumb(manual.thumbnail_url, (width ?? 140) * 2)}
               contentFit="cover"
               transition={200}
               style={StyleSheet.absoluteFill}
@@ -72,12 +85,12 @@ export function ManualCard({
   }
 
   return (
-    <Link href={`/manuals/${manual.id}`} asChild>
+    <Link href={linkHref} asChild>
       <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
         <View style={styles.thumbWrap}>
           <View style={styles.thumbShadow}>
             <Image
-              source={manual.thumbnail_url}
+              source={thumb(manual.thumbnail_url, 240)}
               contentFit="cover"
               transition={200}
               style={styles.thumb}
@@ -227,11 +240,10 @@ const styles = StyleSheet.create({
   // Cover (portrait book-cover) variant
   coverCard: {
     gap: spacing.sm,
+    flexShrink: 0,
   },
   coverPressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
   coverThumbWrap: {
-    width: '100%',
-    aspectRatio: 8 / 11,
     borderRadius: radius.md,
     overflow: 'hidden',
     backgroundColor: colors.surfaceAlt,

@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { AdminField } from '@/components/admin/AdminField';
@@ -25,6 +26,7 @@ import {
   updateVideo,
 } from '@/lib/admin';
 import type { Series, Video, VideoCategory } from '@/lib/supabase';
+import { thumb } from '@/lib/image';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { formatDuration } from '@/lib/format';
 
@@ -33,6 +35,10 @@ type Mode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; video: Video
 export default function AdminVideos() {
   const router = useRouter();
   const toast = useToast();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const videoTitle = (v: Video) => (lang === 'es' ? v.title_es : v.title_en);
+  const catName = (c: VideoCategory) => (lang === 'es' ? c.name_es : c.name_en);
   const [items, setItems] = useState<Video[]>([]);
   const [categories, setCategories] = useState<VideoCategory[]>([]);
   const [series, setSeries] = useState<Series[]>([]);
@@ -47,7 +53,7 @@ export default function AdminVideos() {
       setCategories(c);
       setSeries(s);
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error');
+      toast.error(e?.message ?? t('admin.errors.generic'));
     } finally {
       setLoading(false);
     }
@@ -61,95 +67,100 @@ export default function AdminVideos() {
     const doDelete = async () => {
       try {
         await deleteVideo(v.id);
-        toast.success('Video eliminado');
+        toast.success(t('admin.toasts.deletedVideo'));
         load();
       } catch (e: any) {
-        toast.error(e?.message ?? 'Error');
+        toast.error(e?.message ?? t('admin.errors.generic'));
       }
     };
+    const msg = t('admin.confirms.deleteVideo', { name: videoTitle(v) });
     if (typeof window !== 'undefined' && window.confirm) {
-      if (window.confirm(`¿Eliminar "${v.title_es}"?`)) doDelete();
+      if (window.confirm(msg)) doDelete();
     } else {
-      Alert.alert('Eliminar', `¿Eliminar "${v.title_es}"?`, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: doDelete },
+      Alert.alert(t('admin.confirms.delete'), msg, [
+        { text: t('admin.confirms.cancel'), style: 'cancel' },
+        { text: t('admin.confirms.delete'), style: 'destructive', onPress: doDelete },
       ]);
     }
   }
 
+  const innerStyle = mode.kind === 'list' ? styles.innerList : styles.innerForm;
+
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
-            hitSlop={12}
-            style={styles.back}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow}>ADMIN · VIDEOS</Text>
-            <Text style={styles.title}>
-              {mode.kind === 'list'
-                ? `${items.length} videos`
-                : mode.kind === 'create'
-                ? 'Nuevo video'
-                : 'Editar video'}
-            </Text>
-          </View>
-          {mode.kind === 'list' ? (
+        <View style={innerStyle}>
+          <View style={styles.header}>
             <Pressable
-              onPress={() => setMode({ kind: 'create' })}
-              style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
+              hitSlop={12}
+              style={styles.back}
             >
-              <Ionicons name="add" size={20} color="#fff" />
+              <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
-          ) : null}
-        </View>
-
-        {mode.kind === 'list' ? (
-          loading ? (
-            <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
-          ) : (
-            <View style={{ gap: spacing.sm }}>
-              {items.map((v) => {
-                const cat = categories.find((c) => c.id === v.category_id);
-                return (
-                  <View key={v.id} style={styles.row}>
-                    {v.thumbnail_url ? (
-                      <Image source={v.thumbnail_url} style={styles.rowThumb} contentFit="cover" />
-                    ) : (
-                      <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
-                    )}
-                    <View style={{ flex: 1 }}>
-                      <Text numberOfLines={2} style={styles.rowTitle}>{v.title_es}</Text>
-                      <Text style={styles.rowMeta}>
-                        {cat?.name_es ?? '—'} · {formatDuration(v.duration_seconds)}
-                      </Text>
-                    </View>
-                    <Pressable onPress={() => setMode({ kind: 'edit', video: v })} style={styles.iconBtn}>
-                      <Ionicons name="create-outline" size={18} color={colors.text} />
-                    </Pressable>
-                    <Pressable onPress={() => confirmDelete(v)} style={styles.iconBtn}>
-                      <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                    </Pressable>
-                  </View>
-                );
-              })}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.eyebrow}>{t('admin.labels.videos')}</Text>
+              <Text style={styles.title}>
+                {mode.kind === 'list'
+                  ? t('admin.titles.videosCount', { count: items.length })
+                  : mode.kind === 'create'
+                  ? t('admin.new.video')
+                  : t('admin.edit.video')}
+              </Text>
             </View>
-          )
-        ) : (
-          <VideoForm
-            initial={mode.kind === 'edit' ? mode.video : undefined}
-            categories={categories}
-            series={series}
-            onSaved={() => {
-              setMode({ kind: 'list' });
-              load();
-            }}
-          />
-        )}
+            {mode.kind === 'list' ? (
+              <Pressable
+                onPress={() => setMode({ kind: 'create' })}
+                style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {mode.kind === 'list' ? (
+            loading ? (
+              <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
+            ) : (
+              <View style={{ gap: spacing.sm }}>
+                {items.map((v) => {
+                  const cat = categories.find((c) => c.id === v.category_id);
+                  return (
+                    <View key={v.id} style={styles.row}>
+                      {v.thumbnail_url ? (
+                        <Image source={thumb(v.thumbnail_url, 192)} style={styles.rowThumb} contentFit="cover" />
+                      ) : (
+                        <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text numberOfLines={2} style={styles.rowTitle}>{videoTitle(v)}</Text>
+                        <Text style={styles.rowMeta}>
+                          {(cat ? catName(cat) : null) ?? '—'} · {formatDuration(v.duration_seconds)}
+                        </Text>
+                      </View>
+                      <Pressable onPress={() => setMode({ kind: 'edit', video: v })} style={styles.iconBtn}>
+                        <Ionicons name="create-outline" size={18} color={colors.text} />
+                      </Pressable>
+                      <Pressable onPress={() => confirmDelete(v)} style={styles.iconBtn}>
+                        <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            )
+          ) : (
+            <VideoForm
+              initial={mode.kind === 'edit' ? mode.video : undefined}
+              categories={categories}
+              series={series}
+              onSaved={() => {
+                setMode({ kind: 'list' });
+                load();
+              }}
+            />
+          )}
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -167,6 +178,10 @@ function VideoForm({
   onSaved: () => void;
 }) {
   const toast = useToast();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const catName = (c: VideoCategory) => (lang === 'es' ? c.name_es : c.name_en);
+  const seriesTitle = (s: Series) => (lang === 'es' ? s.title_es : s.title_en);
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? categories[0]?.id ?? '');
   const [seriesId, setSeriesId] = useState<string | null>(initial?.series_id ?? null);
   const [seriesPosition, setSeriesPosition] = useState(String(initial?.series_position ?? ''));
@@ -183,10 +198,10 @@ function VideoForm({
   const [saving, setSaving] = useState(false);
 
   async function onSave() {
-    if (!categoryId) { toast.error('Selecciona una categoría'); return; }
-    if (!titleEn.trim() || !titleEs.trim()) { toast.error('Título obligatorio'); return; }
-    if (!videoUrl) { toast.error('Sube el video'); return; }
-    if (!thumbnail) { toast.error('Sube la miniatura'); return; }
+    if (!categoryId) { toast.error(t('admin.errors.categoryRequired')); return; }
+    if (!titleEn.trim() || !titleEs.trim()) { toast.error(t('admin.errors.titleRequired')); return; }
+    if (!videoUrl) { toast.error(t('admin.errors.videoRequired')); return; }
+    if (!thumbnail) { toast.error(t('admin.errors.thumbnailRequired')); return; }
     try {
       setSaving(true);
       const payload: any = {
@@ -206,14 +221,14 @@ function VideoForm({
       };
       if (initial) {
         await updateVideo(initial.id, payload);
-        toast.success('Video actualizado');
+        toast.success(t('admin.toasts.savedVideo'));
       } else {
         await createVideo(payload);
-        toast.success('Video creado');
+        toast.success(t('admin.toasts.createdVideo'));
       }
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error al guardar');
+      toast.error(e?.message ?? t('admin.errors.save'));
     } finally {
       setSaving(false);
     }
@@ -222,7 +237,7 @@ function VideoForm({
   return (
     <View style={{ gap: spacing.md }}>
       <View>
-        <Text style={styles.fieldLabel}>Categoría</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.category')}</Text>
         <View style={styles.chipsWrap}>
           {categories.map((c) => (
             <Pressable
@@ -231,7 +246,7 @@ function VideoForm({
               style={[styles.chip, categoryId === c.id && styles.chipActive]}
             >
               <Text style={[styles.chipText, categoryId === c.id && styles.chipTextActive]}>
-                {c.name_es}
+                {catName(c)}
               </Text>
             </Pressable>
           ))}
@@ -239,13 +254,13 @@ function VideoForm({
       </View>
 
       <View>
-        <Text style={styles.fieldLabel}>Serie (opcional)</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.series')}</Text>
         <View style={styles.chipsWrap}>
           <Pressable
             onPress={() => { setSeriesId(null); setSeriesPosition(''); }}
             style={[styles.chip, seriesId === null && styles.chipActive]}
           >
-            <Text style={[styles.chipText, seriesId === null && styles.chipTextActive]}>Sin serie</Text>
+            <Text style={[styles.chipText, seriesId === null && styles.chipTextActive]}>{t('admin.form.noSeries')}</Text>
           </Pressable>
           {series.map((s) => (
             <Pressable
@@ -254,7 +269,7 @@ function VideoForm({
               style={[styles.chip, seriesId === s.id && styles.chipActive]}
             >
               <Text style={[styles.chipText, seriesId === s.id && styles.chipTextActive]}>
-                {s.title_es}
+                {seriesTitle(s)}
               </Text>
             </Pressable>
           ))}
@@ -263,7 +278,7 @@ function VideoForm({
 
       {seriesId ? (
         <AdminField
-          label="Posición en la serie (1, 2, 3...)"
+          label={t('admin.form.seriesPosition')}
           value={seriesPosition}
           onChangeText={setSeriesPosition}
           keyboardType="number-pad"
@@ -271,13 +286,13 @@ function VideoForm({
         />
       ) : null}
 
-      <AdminField label="Título (Inglés)" value={titleEn} onChangeText={setTitleEn} placeholder="Getting Started" />
-      <AdminField label="Título (Español)" value={titleEs} onChangeText={setTitleEs} placeholder="Primeros pasos" />
-      <AdminField label="Descripción (Inglés)" value={descEn} onChangeText={setDescEn} multiline numberOfLines={3} placeholder="Optional" />
-      <AdminField label="Descripción (Español)" value={descEs} onChangeText={setDescEs} multiline numberOfLines={3} placeholder="Opcional" />
+      <AdminField label={t('admin.form.titleEn')} value={titleEn} onChangeText={setTitleEn} placeholder="Getting Started" />
+      <AdminField label={t('admin.form.titleEs')} value={titleEs} onChangeText={setTitleEs} placeholder="Primeros pasos" />
+      <AdminField label={t('admin.form.descriptionEn')} value={descEn} onChangeText={setDescEn} multiline numberOfLines={3} placeholder="Optional" />
+      <AdminField label={t('admin.form.descriptionEs')} value={descEs} onChangeText={setDescEs} multiline numberOfLines={3} placeholder="Opcional" />
 
       <View>
-        <Text style={styles.fieldLabel}>Miniatura (1280×720, &lt;200 KB)</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.thumbnailVideo')}</Text>
         <FilePicker
           bucket="thumbnails"
           accept="image/*"
@@ -288,7 +303,7 @@ function VideoForm({
       </View>
 
       <View>
-        <Text style={styles.fieldLabel}>Archivo de video (MP4 H.264, faststart)</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.videoFile')}</Text>
         <FilePicker
           bucket="videos"
           accept="video/mp4,video/*"
@@ -297,7 +312,6 @@ function VideoForm({
           onUploaded={(url, file) => {
             setVideoUrl(url);
             setSizeBytes(file.size);
-            // Try to extract duration
             if (typeof window !== 'undefined') {
               const v = document.createElement('video');
               v.preload = 'metadata';
@@ -313,22 +327,34 @@ function VideoForm({
 
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
         <View style={{ flex: 1 }}>
-          <AdminField label="Duración (seg)" value={duration} onChangeText={setDuration} keyboardType="number-pad" />
+          <AdminField label={t('admin.form.duration')} value={duration} onChangeText={setDuration} keyboardType="number-pad" />
         </View>
         <View style={{ flex: 1 }}>
-          <AdminField label="Resolución" value={resolution} onChangeText={setResolution} placeholder="1920x1080" />
+          <AdminField label={t('admin.form.resolution')} value={resolution} onChangeText={setResolution} placeholder="1920x1080" />
         </View>
       </View>
 
-      <AdminField label="Instructor" value={instructor} onChangeText={setInstructor} placeholder="Tech Advance" />
+      <AdminField label={t('admin.form.instructor')} value={instructor} onChangeText={setInstructor} placeholder="Tech Advance" />
 
-      <Button label={saving ? 'Guardando...' : initial ? 'Guardar cambios' : 'Crear video'} onPress={onSave} loading={saving} />
+      <Button
+        label={
+          saving
+            ? t('admin.buttons.saving')
+            : initial
+            ? t('admin.buttons.save')
+            : t('admin.buttons.createVideo')
+        }
+        onPress={onSave}
+        loading={saving}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, alignItems: 'center' },
+  innerList: { width: '100%', maxWidth: 1100, gap: spacing.lg },
+  innerForm: { width: '100%', maxWidth: 880, gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   back: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface,

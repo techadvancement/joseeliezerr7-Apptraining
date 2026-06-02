@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { AuthCard } from '@/components/AuthCard';
 import { useToast } from '@/components/Toast';
 import { supabase, SUPABASE_CONFIGURED } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/constants/theme';
@@ -60,6 +61,7 @@ export default function ResetPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <AuthCard gap={spacing.xl}>
           <View style={styles.headerRow}>
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <Ionicons name="chevron-back" size={26} color={colors.text} />
@@ -100,6 +102,7 @@ export default function ResetPasswordScreen() {
 
             <Button label={t('common.save')} onPress={onSubmit} loading={loading} fullWidth />
           </View>
+          </AuthCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -107,7 +110,7 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.xl, gap: spacing.xl, flexGrow: 1 },
+  container: { flexGrow: 1, alignItems: 'center', paddingVertical: spacing.xl },
   headerRow: { flexDirection: 'row' },
   hero: { gap: spacing.xs },
   title: { ...typography.h1, color: colors.text },

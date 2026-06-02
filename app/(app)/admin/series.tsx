@@ -27,6 +27,7 @@ import {
   updateSeries,
 } from '@/lib/admin';
 import type { Series, VideoCategory } from '@/lib/supabase';
+import { thumb } from '@/lib/image';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
 type Mode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; series: Series };
@@ -50,7 +51,7 @@ export default function AdminSeries() {
       setItems(s);
       setCategories(c);
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error');
+      toast.error(e?.message ?? t('admin.errors.generic'));
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ export default function AdminSeries() {
         await deleteSeries(s.id);
         toast.success(t('admin.toasts.deletedSeries'));
         load();
-      } catch (e: any) { toast.error(e?.message ?? 'Error'); }
+      } catch (e: any) { toast.error(e?.message ?? t('admin.errors.generic')); }
     };
     const msg = t('admin.confirms.deleteSeries', { name: seriesName(s) });
     if (typeof window !== 'undefined' && window.confirm) {
@@ -77,82 +78,86 @@ export default function AdminSeries() {
     }
   }
 
+  const innerStyle = mode.kind === 'list' ? styles.innerList : styles.innerForm;
+
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
-            hitSlop={12}
-            style={styles.back}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow}>{t('admin.labels.series')}</Text>
-            <Text style={styles.title}>
-              {mode.kind === 'list'
-                ? t('admin.titles.seriesCount', { count: items.length })
-                : mode.kind === 'create'
-                ? t('admin.new.series')
-                : t('admin.edit.series', { name: seriesName(mode.series) })}
-            </Text>
-          </View>
-          {mode.kind === 'list' ? (
+        <View style={innerStyle}>
+          <View style={styles.header}>
             <Pressable
-              onPress={() => setMode({ kind: 'create' })}
-              style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
+              hitSlop={12}
+              style={styles.back}
             >
-              <Ionicons name="add" size={20} color="#fff" />
+              <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
-          ) : null}
-        </View>
-
-        {mode.kind === 'list' ? (
-          loading ? (
-            <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
-          ) : (
-            <View style={{ gap: spacing.sm }}>
-              {items.map((s) => (
-                <View key={s.id} style={styles.row}>
-                  {s.thumbnail_url ? (
-                    <Image source={s.thumbnail_url} style={styles.rowThumb} contentFit="cover" />
-                  ) : (
-                    <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text numberOfLines={1} style={styles.rowTitle}>{seriesName(s)}</Text>
-                      {s.featured ? (
-                        <Ionicons name="star" size={12} color={colors.accent} />
-                      ) : null}
-                    </View>
-                    <Text style={styles.rowMeta}>
-                      {s.slug} · {t('admin.rowOrder', { n: s.order_index })}
-                    </Text>
-                  </View>
-                  <Pressable onPress={() => setMode({ kind: 'edit', series: s })} style={styles.iconBtn}>
-                    <Ionicons name="create-outline" size={18} color={colors.text} />
-                  </Pressable>
-                  <Pressable onPress={() => confirmDelete(s)} style={styles.iconBtn}>
-                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                  </Pressable>
-                </View>
-              ))}
-              {items.length === 0 ? (
-                <Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: spacing.xl }}>
-                  {t('admin.series.empty')}
-                </Text>
-              ) : null}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.eyebrow}>{t('admin.labels.series')}</Text>
+              <Text style={styles.title}>
+                {mode.kind === 'list'
+                  ? t('admin.titles.seriesCount', { count: items.length })
+                  : mode.kind === 'create'
+                  ? t('admin.new.series')
+                  : t('admin.edit.series', { name: seriesName(mode.series) })}
+              </Text>
             </View>
-          )
-        ) : (
-          <SeriesForm
-            initial={mode.kind === 'edit' ? mode.series : undefined}
-            categories={categories}
-            onSaved={() => { setMode({ kind: 'list' }); load(); }}
-          />
-        )}
+            {mode.kind === 'list' ? (
+              <Pressable
+                onPress={() => setMode({ kind: 'create' })}
+                style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {mode.kind === 'list' ? (
+            loading ? (
+              <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
+            ) : (
+              <View style={{ gap: spacing.sm }}>
+                {items.map((s) => (
+                  <View key={s.id} style={styles.row}>
+                    {s.thumbnail_url ? (
+                      <Image source={thumb(s.thumbnail_url, 192)} style={styles.rowThumb} contentFit="cover" />
+                    ) : (
+                      <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text numberOfLines={1} style={styles.rowTitle}>{seriesName(s)}</Text>
+                        {s.featured ? (
+                          <Ionicons name="star" size={12} color={colors.accent} />
+                        ) : null}
+                      </View>
+                      <Text style={styles.rowMeta}>
+                        {s.slug} · {t('admin.rowOrder', { n: s.order_index })}
+                      </Text>
+                    </View>
+                    <Pressable onPress={() => setMode({ kind: 'edit', series: s })} style={styles.iconBtn}>
+                      <Ionicons name="create-outline" size={18} color={colors.text} />
+                    </Pressable>
+                    <Pressable onPress={() => confirmDelete(s)} style={styles.iconBtn}>
+                      <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                    </Pressable>
+                  </View>
+                ))}
+                {items.length === 0 ? (
+                  <Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: spacing.xl }}>
+                    {t('admin.series.empty')}
+                  </Text>
+                ) : null}
+              </View>
+            )
+          ) : (
+            <SeriesForm
+              initial={mode.kind === 'edit' ? mode.series : undefined}
+              categories={categories}
+              onSaved={() => { setMode({ kind: 'list' }); load(); }}
+            />
+          )}
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -287,7 +292,9 @@ function SeriesForm({
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, alignItems: 'center' },
+  innerList: { width: '100%', maxWidth: 1100, gap: spacing.lg },
+  innerForm: { width: '100%', maxWidth: 880, gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   back: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface,

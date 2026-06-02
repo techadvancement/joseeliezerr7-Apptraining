@@ -16,6 +16,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { CountryPicker } from '@/components/CountryPicker';
+import { AuthCard } from '@/components/AuthCard';
 import { useAuth } from '@/lib/auth';
 import { SUPABASE_CONFIGURED } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/constants/theme';
@@ -107,6 +108,7 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
+          <AuthCard maxWidth={480} gap={spacing.xl}>
           <View style={styles.headerRow}>
             <Link href="/(auth)/login" asChild>
               <Pressable hitSlop={12}>
@@ -201,6 +203,7 @@ export default function RegisterScreen() {
               </Pressable>
             </Link>
           </View>
+          </AuthCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -209,9 +212,9 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.xl,
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
   },
   headerRow: { flexDirection: 'row', alignItems: 'center' },
   hero: { gap: spacing.xs },

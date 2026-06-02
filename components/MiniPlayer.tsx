@@ -1,10 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAudioPlayer } from '@/lib/audioPlayer';
+import { haptics } from '@/lib/haptics';
+import { thumb } from '@/lib/image';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
 
 const TAB_BAR_HEIGHT = 56;
@@ -12,7 +14,8 @@ const TAB_BAR_HEIGHT = 56;
 export function MiniPlayer() {
   const { track, isPlaying, position, duration, toggle, stop } = useAudioPlayer();
   const router = useRouter();
-  const { i18n } = useTranslation();
+  const pathname = usePathname();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
 
@@ -27,10 +30,15 @@ export function MiniPlayer() {
     >
       <View style={styles.card}>
         <Pressable
-          onPress={() => router.push(`/videos/play/${track.id}`)}
+          onPress={() =>
+            router.push({
+              pathname: '/videos/play/[id]',
+              params: { id: track.id, from: pathname || '/' },
+            })
+          }
           style={({ pressed }) => [styles.body, pressed && { opacity: 0.85 }]}
         >
-          <Image source={track.thumbnail_url} style={styles.thumb} contentFit="cover" />
+          <Image source={thumb(track.thumbnail_url, 96)} style={styles.thumb} contentFit="cover" />
           <View style={styles.info}>
             <Text numberOfLines={1} style={styles.title}>{title}</Text>
             {track.instructor ? (
@@ -39,10 +47,28 @@ export function MiniPlayer() {
           </View>
         </Pressable>
 
-        <Pressable hitSlop={10} onPress={toggle} style={styles.playBtn}>
+        <Pressable
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={isPlaying ? t('a11y.pause') : t('a11y.play')}
+          onPress={() => {
+            haptics.light();
+            toggle();
+          }}
+          style={styles.playBtn}
+        >
           <Ionicons name={isPlaying ? 'pause' : 'play'} size={20} color="#fff" />
         </Pressable>
-        <Pressable hitSlop={10} onPress={stop} style={styles.iconBtn}>
+        <Pressable
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.close')}
+          onPress={() => {
+            haptics.light();
+            stop();
+          }}
+          style={styles.iconBtn}
+        >
           <Ionicons name="close" size={18} color={colors.textMuted} />
         </Pressable>
 

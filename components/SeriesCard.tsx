@@ -4,13 +4,14 @@ import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
+import { thumb } from '@/lib/image';
 import type { Series } from '@/lib/supabase';
 
 type Size = 'sm' | 'md' | 'lg';
 
 const sizeMap: Record<Size, { width: number; aspect: number }> = {
-  sm: { width: 200, aspect: 16 / 9 },
-  md: { width: 260, aspect: 16 / 9 },
+  sm: { width: 160, aspect: 16 / 9 },
+  md: { width: 240, aspect: 16 / 9 },
   lg: { width: 320, aspect: 16 / 9 },
 };
 
@@ -37,10 +38,15 @@ export function SeriesCard({ series, size = 'md' }: { series: Series; size?: Siz
           pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
         ]}
       >
-        <View style={[styles.thumb, { aspectRatio: dims.aspect }]}>
+        <View
+          style={[
+            styles.thumb,
+            { width: dims.width, height: Math.round(dims.width / dims.aspect) },
+          ]}
+        >
           {series.thumbnail_url ? (
             <Image
-              source={series.thumbnail_url}
+              source={thumb(series.thumbnail_url, dims.width * 2)}
               contentFit="cover"
               transition={200}
               style={StyleSheet.absoluteFill}
@@ -76,9 +82,8 @@ export function SeriesCard({ series, size = 'md' }: { series: Series; size?: Siz
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.sm },
+  card: { gap: spacing.sm, flexShrink: 0 },
   thumb: {
-    width: '100%',
     borderRadius: radius.lg,
     overflow: 'hidden',
     backgroundColor: colors.surfaceAlt,

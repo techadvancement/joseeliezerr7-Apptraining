@@ -1,6 +1,8 @@
 -- Training App — Supabase schema
 -- Run this in the Supabase SQL editor (or via `supabase db push`).
--- Creates: profiles, video_categories, videos, manuals + storage buckets + RLS.
+-- Idempotent: safe to re-run on existing installs (adds missing columns/tables/policies).
+-- Creates: profiles (+role), video_categories, videos (+series link), manuals, series,
+--          bookmarks, video_notes, video_progress, admin RPCs + RLS.
 
 -- ---------- Extensions ----------
 create extension if not exists "pgcrypto";
@@ -233,6 +235,197 @@ end $$;
 
 revoke all on function public.delete_account() from public;
 grant execute on function public.delete_account() to authenticated;
+
+-- ---------- profiles.role + is_admin() helper ----------
+-- App code (`lib/auth.tsx`, `lib/admin.ts`) reads/writes `profiles.role` and the admin
+-- panel gates on `role === 'admin'`. Defaults to 'user' so existing rows backfill safely.
+alter table public.profiles
+  add column if not exists role text not null default 'user';
+
+-- Add the check constraint only once.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'profiles_role_check'
+  ) then
+    alter table public.profiles
+      add constraint profiles_role_check check (role in ('user','admin'));
+  end if;
+end $$;
+
+-- Partial index: only non-default ('admin') rows take space.
+create index if not exists profiles_role_idx on public.profiles(role) where role <> 'user';
+
+-- Helper: is the current authenticated user an admin?
+-- security definer so it can read profiles even when RLS would block; coalesce so a
+-- missing profile row returns false instead of NULL (otherwise policies short-circuit oddly).
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select role = 'admin' from public.profiles where id = auth.uid()),
+    false
+  );
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to authenticated;
+
+-- Admins can read every profile (for the admin users list + stats count).
+drop policy if exists "profiles_admin_read_all" on public.profiles;
+create policy "profiles_admin_read_all" on public.profiles
+  for select to authenticated using (public.is_admin());
+
+-- ---------- series ----------
+-- Used by `lib/api.ts` (`fetchSeries`, `fetchSeriesById`, `fetchSeriesVideos`)
+-- and the admin/series CRUD in `lib/admin.ts`.
+create table if not exists public.series (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  title_en text not null,
+  title_es text not null,
+  description_en text,
+  description_es text,
+  thumbnail_url text,
+  category_id uuid references public.video_categories(id) on delete set null,
+  order_index int not null default 0,
+  featured boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists series_category_idx on public.series(category_id);
+create index if not exists series_featured_idx on public.series(featured) where featured;
+create index if not exists series_order_idx on public.series(order_index);
+
+alter table public.series enable row level security;
+
+drop policy if exists "series_read_authd" on public.series;
+create policy "series_read_authd" on public.series
+  for select to authenticated using (true);
+
+drop policy if exists "series_admin_all" on public.series;
+create policy "series_admin_all" on public.series
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop trigger if exists trg_series_updated_at on public.series;
+create trigger trg_series_updated_at before update on public.series
+  for each row execute function public.set_updated_at();
+
+-- ---------- videos: series link ----------
+-- Added after the initial schema; videos can belong to at most one series with a position.
+alter table public.videos add column if not exists series_id uuid
+  references public.series(id) on delete set null;
+alter table public.videos add column if not exists series_position int;
+create index if not exists videos_series_idx on public.videos(series_id, series_position);
+
+-- ---------- admin write policies on content tables ----------
+-- Reads stay open to any authenticated user; writes require role='admin'.
+drop policy if exists "video_categories_admin_all" on public.video_categories;
+create policy "video_categories_admin_all" on public.video_categories
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "videos_admin_all" on public.videos;
+create policy "videos_admin_all" on public.videos
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "manuals_admin_all" on public.manuals;
+create policy "manuals_admin_all" on public.manuals
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- ---------- admin_users_view ----------
+-- View joining auth.users + profiles for admin user management. Returned by admin_list_users().
+create or replace view public.admin_users_view as
+  select
+    p.id,
+    u.email,
+    u.created_at as signed_up_at,
+    u.last_sign_in_at,
+    u.email_confirmed_at,
+    p.full_name,
+    p.country,
+    p.phone,
+    p.avatar_url,
+    p.role,
+    p.updated_at
+  from public.profiles p
+  join auth.users u on u.id = p.id;
+
+-- ---------- admin_list_users RPC ----------
+-- Returns the admin_users_view, admin-only. security definer required because the view
+-- joins auth.users (not readable by `authenticated` role directly).
+create or replace function public.admin_list_users()
+returns setof public.admin_users_view
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  return query select * from public.admin_users_view order by signed_up_at desc;
+end $$;
+
+revoke all on function public.admin_list_users() from public;
+grant execute on function public.admin_list_users() to authenticated;
+
+-- ---------- admin_set_user_role RPC ----------
+-- Protects against admin demoting themselves (would lock the org out of admin features).
+create or replace function public.admin_set_user_role(p_user_id uuid, p_role text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  if p_role not in ('user','admin') then
+    raise exception 'invalid role';
+  end if;
+  if p_user_id = auth.uid() and p_role <> 'admin' then
+    raise exception 'cannot demote yourself';
+  end if;
+  update public.profiles set role = p_role where id = p_user_id;
+end $$;
+
+revoke all on function public.admin_set_user_role(uuid, text) from public;
+grant execute on function public.admin_set_user_role(uuid, text) to authenticated;
+
+-- ---------- admin_delete_user RPC ----------
+-- Cascades to public.profiles via FK on auth.users(id).
+create or replace function public.admin_delete_user(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  if p_user_id = auth.uid() then
+    raise exception 'cannot delete yourself';
+  end if;
+  delete from auth.users where id = p_user_id;
+end $$;
+
+revoke all on function public.admin_delete_user(uuid) from public;
+grant execute on function public.admin_delete_user(uuid) to authenticated;
+
+-- ---------- Bootstrap your first admin ----------
+-- After running this script on a fresh install, manually promote your own user once:
+--
+--   update public.profiles set role = 'admin' where id = '<your-auth-user-uuid>';
+--
+-- From then on, the admin panel and admin_* RPCs work for that user, and you can
+-- promote additional admins from the in-app users screen.
 
 -- ---------- Sample seed (optional) ----------
 -- insert into public.video_categories (slug, name_en, name_es, thumbnail_url, order_index) values

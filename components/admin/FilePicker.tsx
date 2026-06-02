@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/Toast';
 import { uploadToBucket, slugify } from '@/lib/admin';
 import { colors, radius, spacing, typography } from '@/constants/theme';
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function FilePicker({ bucket, accept, pathPrefix = '', value, onUploaded, label }: Props) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
@@ -31,12 +33,12 @@ export function FilePicker({ bucket, accept, pathPrefix = '', value, onUploaded,
       const base = slugify(file.name.replace(/\.[^.]+$/, '')) || 'file';
       const filename = `${base}-${Date.now()}.${ext}`;
       const path = pathPrefix ? `${pathPrefix.replace(/^\/|\/$/g, '')}/${filename}` : filename;
-      setProgress(`Subiendo ${(file.size / (1024 * 1024)).toFixed(1)} MB...`);
+      setProgress(t('admin.uploader.uploading', { size: (file.size / (1024 * 1024)).toFixed(1) }));
       const url = await uploadToBucket(bucket, path, file);
       onUploaded(url, file);
-      toast.success('Archivo subido');
+      toast.success(t('admin.uploader.success'));
     } catch (err: any) {
-      toast.error(err?.message ?? 'Error al subir');
+      toast.error(err?.message ?? t('admin.uploader.uploadFailed'));
     } finally {
       setUploading(false);
       setProgress(null);
@@ -56,7 +58,7 @@ export function FilePicker({ bucket, accept, pathPrefix = '', value, onUploaded,
   }
 
   const hasFile = !!value;
-  const labelText = label ?? (hasFile ? 'Reemplazar archivo' : 'Seleccionar archivo');
+  const labelText = label ?? (hasFile ? t('admin.uploader.replace') : t('admin.uploader.select'));
 
   return (
     <View style={styles.wrap}>

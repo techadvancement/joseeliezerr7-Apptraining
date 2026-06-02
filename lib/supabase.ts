@@ -1,18 +1,8 @@
 import 'react-native-url-polyfill/auto';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
-import { createClient, type SupportedStorage } from '@supabase/supabase-js';
-
-const SecureStoreAdapter: SupportedStorage = {
-  getItem: (key) => SecureStore.getItemAsync(key),
-  setItem: (key, value) => SecureStore.setItemAsync(key, value),
-  removeItem: (key) => SecureStore.deleteItemAsync(key),
-};
-
-const storage: SupportedStorage =
-  Platform.OS === 'web' ? AsyncStorage : SecureStoreAdapter;
+import { createClient } from '@supabase/supabase-js';
+import { storage } from './_storage';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
 const envUrl =
@@ -37,6 +27,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',
+    // PKCE puts tokens in ?query instead of #fragment. Required on Android
+    // because Chrome strips fragments when redirecting to a custom scheme,
+    // which broke the recovery flow ("Auth session missing").
+    flowType: 'pkce',
   },
 });
 

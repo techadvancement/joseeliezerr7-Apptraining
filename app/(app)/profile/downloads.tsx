@@ -104,6 +104,9 @@ export default function DownloadsScreen() {
 
 const styles = StyleSheet.create({
   header: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
@@ -125,7 +128,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239,68,68,0.4)',
   },
   clearText: { ...typography.caption, color: colors.danger, fontWeight: '700' },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.md },
+  list: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.md,
+  },
   itemWrap: { gap: spacing.xs },
   itemMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   itemSize: { ...typography.caption, color: colors.textMuted, fontSize: 11 },

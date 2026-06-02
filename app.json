@@ -1,42 +1,70 @@
 {
   "expo": {
-    "name": "Training App",
-    "slug": "training-app",
-    "scheme": "trainingapp",
-    "version": "0.1.0",
-    "orientation": "portrait",
+    "name": "Tech Advancement",
+    "slug": "tech-advancement",
+    "scheme": "techadvancement",
+    "version": "1.0.0",
+    "orientation": "default",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
+    "icon": "./assets/images/icon.png",
     "splash": {
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B0F1A"
+      "backgroundColor": "#000000"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.trainingapp",
+      "bundleIdentifier": "com.solucionestechn.techadvancement",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos so you can pick a profile picture.",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
-      "package": "com.yourcompany.trainingapp",
+      "package": "com.solucionestechn.techadvancement",
       "adaptiveIcon": {
-        "backgroundColor": "#0B0F1A"
+        "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
+        "backgroundColor": "#000000"
       },
-      "permissions": ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+      "permissions": [],
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#000000",
+      "translucent": false
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 432,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#5B7CFA"
+        }
+      ],
       "expo-apple-authentication",
       [
         "expo-image-picker",
@@ -49,8 +77,21 @@
       "typedRoutes": false
     },
     "extra": {
-      "supabaseUrl": "",
-      "supabaseAnonKey": ""
+      "supabaseUrl": "https://training-app.solucionestechn.com",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4NzgyODMzLCJleHAiOjE5MzY0NjI4MzN9.W9l36TXpJHWZh0Cu9RtbZ7yYh6HfzDtHeiw2gvoMZdM",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "9f7922b3-ce65-4d8e-826d-da9234644731"
+      }
+    },
+    "owner": "joseeliezerr123",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9f7922b3-ce65-4d8e-826d-da9234644731"
     }
   }
 }

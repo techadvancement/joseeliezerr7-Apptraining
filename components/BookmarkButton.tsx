@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth';
 import {
   isBookmarked as isBookmarkedFn,
@@ -8,6 +9,7 @@ import {
   type BookmarkType,
 } from '@/lib/bookmarks';
 import { useToast } from '@/components/Toast';
+import { haptics } from '@/lib/haptics';
 import { colors, radius, spacing } from '@/constants/theme';
 
 type Props = {
@@ -19,6 +21,7 @@ type Props = {
 export function BookmarkButton({ type, id, size = 22 }: Props) {
   const { user } = useAuth();
   const toast = useToast();
+  const { t } = useTranslation();
   const [active, setActive] = useState(false);
   const [pending, setPending] = useState(false);
 
@@ -34,12 +37,13 @@ export function BookmarkButton({ type, id, size = 22 }: Props) {
     setPending(true);
     const prev = active;
     setActive(!prev);
+    haptics.selection();
     try {
       const now = await toggleBookmark(user.id, type, id);
       setActive(now);
     } catch (err: any) {
       setActive(prev);
-      toast.error(err?.message ?? 'Could not update');
+      toast.error(err?.message ?? t('common.couldNotUpdate'));
     } finally {
       setPending(false);
     }
@@ -49,6 +53,8 @@ export function BookmarkButton({ type, id, size = 22 }: Props) {
     <Pressable
       onPress={onToggle}
       hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={active ? t('a11y.bookmarkRemove') : t('a11y.bookmarkAdd')}
       style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
     >
       <Ionicons

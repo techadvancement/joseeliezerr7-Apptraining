@@ -9,12 +9,14 @@ import {
   View,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Screen } from '@/components/ui/Screen';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { AuthCard } from '@/components/AuthCard';
 import { supabase, SUPABASE_CONFIGURED } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/constants/theme';
 
@@ -41,7 +43,10 @@ export default function ForgotPasswordScreen() {
     }
     try {
       setLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      const redirectTo = Linking.createURL('reset-password');
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo,
+      });
       if (error) throw error;
       setSent(true);
     } catch (err: any) {
@@ -58,6 +63,7 @@ export default function ForgotPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <AuthCard gap={spacing.xl}>
           <View style={styles.headerRow}>
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <Ionicons name="chevron-back" size={26} color={colors.text} />
@@ -100,6 +106,7 @@ export default function ForgotPasswordScreen() {
               />
             </View>
           )}
+          </AuthCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -107,7 +114,7 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.xl, gap: spacing.xl, flexGrow: 1, justifyContent: 'flex-start' },
+  container: { flexGrow: 1, alignItems: 'center', paddingVertical: spacing.xl },
   headerRow: { flexDirection: 'row' },
   hero: { gap: spacing.xs },
   title: { ...typography.h1, color: colors.text },

@@ -1,0 +1,115 @@
+================================================================
+TECH ADVANCEMENT — IARC Content Rating questionnaire (DRAFT)
+================================================================
+
+Open Play Console → Policy → App content → Content rating →
+"Start questionnaire". Email defaults to the developer account
+email — keep it.
+
+Recommended app category (asked first):
+  ► EDUCATION
+  (Tools/Reference also acceptable; Education matches the
+   onboarding copy: "Train at your pace", "Manuals at hand".)
+
+Once the category is set, IARC presents a category-specific list
+of yes/no questions. For this app the answer is "No" to every
+one of them. Cross-reference table below — if any of these is
+actually true in your real training catalog, flip the answer.
+
+----------------------------------------------------------------
+1) VIOLENCE
+----------------------------------------------------------------
+[ NO ] Does the app contain violence?
+[ NO ] Does the app contain realistic violence (acts of violence
+       that look real)?
+[ NO ] Does the app contain blood or gore?
+[ NO ] Does the app contain violence against vulnerable groups
+       or identifiable real groups?
+[ NO ] Does the app contain violence with weapons?
+
+⚠️  If any training video shows industrial/workplace injuries,
+   first aid demos with realistic blood, defensive-tactics
+   footage, or similar — flip the relevant answer.
+
+----------------------------------------------------------------
+2) SEXUAL CONTENT
+----------------------------------------------------------------
+[ NO ] Does the app contain sexual content, nudity, sexual
+       innuendo, or references to sex?
+[ NO ] Does the app contain explicit nudity, sexual acts, or
+       sexual content involving minors?
+
+----------------------------------------------------------------
+3) PROFANITY & CRUDE HUMOR
+----------------------------------------------------------------
+[ NO ] Does the app contain profanity or crude humor?
+[ NO ] Does the app contain strong/explicit profanity or crude
+       references involving sexual or bodily functions?
+
+⚠️  If your training videos include occasional informal
+   language ("damn", "hell"), the conservative answer is still
+   "No". Only flip if there is regular strong profanity.
+
+----------------------------------------------------------------
+4) CONTROLLED SUBSTANCES
+----------------------------------------------------------------
+[ NO ] Does the app contain references to or depict use of
+       alcohol, tobacco, or drugs?
+[ NO ] Does the app contain instructions on how to make/use
+       drugs, alcohol, or tobacco?
+
+----------------------------------------------------------------
+5) GAMBLING
+----------------------------------------------------------------
+[ NO ] Does the app contain simulated gambling (no real money)?
+[ NO ] Does the app enable real-money gambling?
+
+----------------------------------------------------------------
+6) MISCELLANEOUS / SENSITIVE THEMES
+----------------------------------------------------------------
+[ NO ] Does the app contain content that may be disturbing to
+       some users (horror themes, jump scares, etc.)?
+[ NO ] Does the app contain references to discrimination based
+       on race, gender, religion, sexuality, etc.?
+[ NO ] Does the app contain content that promotes/glorifies
+       self-harm, suicide, eating disorders?
+[ NO ] Does the app contain content that promotes terrorism or
+       extremist organizations?
+
+----------------------------------------------------------------
+7) INTERACTIVE ELEMENTS (these are NOT about the rating itself,
+   but Play uses them to surface advisories like "users interact")
+----------------------------------------------------------------
+[ NO ] Do users interact with each other inside the app?
+       (no chat, no comments, no DMs, no forum, no social feed)
+[ NO ] Does the app share the user's location with other users?
+[ NO ] Does the app share personal information with other users?
+[ NO ] Does the app enable purchases of digital goods?
+       (no IAP in current build)
+[ NO ] Does the app give users unrestricted access to the
+       Internet (open web browser)?
+       (we only fetch from our own Supabase + open in-app
+        video player + PDF viewer — no general web browsing)
+[ NO ] Does the app contain user-generated content shared with
+       others? (notes & bookmarks are private to each account)
+
+----------------------------------------------------------------
+EXPECTED RESULTING RATINGS
+----------------------------------------------------------------
+With all "No" answers + Education category, expect:
+
+  IARC Generic    : 3+
+  ESRB (US)       : Everyone
+  PEGI (EU)       : PEGI 3
+  USK (Germany)   : USK 0
+  ClassInd (BR)   : L  (Livre)
+  Google Play     : Rated for 3+
+  Apple App Store : 4+  (if you submit the same questionnaire
+                          intent to App Store Connect later)
+
+----------------------------------------------------------------
+NEXT STEP
+----------------------------------------------------------------
+After submission Play Console shows the rating immediately and
+emails certificates for each regional board. Save the email.
+The rating attaches to the AAB on the next release.

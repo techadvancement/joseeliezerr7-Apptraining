@@ -43,3 +43,25 @@ export async function saveNotes(
     .upsert({ user_id: userId, video_id: videoId, content });
   if (error) throw error;
 }
+
+export type NoteRow = {
+  video_id: string;
+  content: string;
+  updated_at: string;
+};
+
+export async function listAllNotes(userId: string): Promise<NoteRow[]> {
+  if (!SUPABASE_CONFIGURED) {
+    const map = await readLocal();
+    return Object.entries(map)
+      .map(([video_id, v]) => ({ video_id, content: v.content, updated_at: v.updated_at }))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+  const { data, error } = await supabase
+    .from('video_notes')
+    .select('video_id, content, updated_at')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return ((data as NoteRow[]) ?? []).filter((r) => r.content && r.content.trim().length > 0);
+}

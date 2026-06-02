@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { CategoryChip } from '@/components/CategoryChip';
 import { ManualCard } from '@/components/ManualCard';
 import { SearchBar } from '@/components/SearchBar';
+import { SectionHeader } from '@/components/SectionHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { ManualCardSkeleton } from '@/components/Skeleton';
 import { useToast } from '@/components/Toast';
-import { fetchManuals } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { fetchManual, fetchManuals } from '@/lib/api';
+import { useResponsive } from '@/lib/responsive';
+import { listBookmarks } from '@/lib/bookmarks';
 import type { Manual } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
@@ -18,7 +23,11 @@ type LangFilter = 'all' | 'en' | 'es';
 export default function ManualsIndex() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const router = useRouter();
+  const { user } = useAuth();
+  const { columns } = useResponsive();
   const [manuals, setManuals] = useState<Manual[]>([]);
+  const [savedManuals, setSavedManuals] = useState<Manual[]>([]);
   const [filter, setFilter] = useState<LangFilter>('all');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -30,11 +39,21 @@ export default function ManualsIndex() {
         const arg = lang === 'all' ? undefined : lang;
         const data = await fetchManuals(arg);
         setManuals(data);
+        if (user) {
+          const bookmarks = await listBookmarks(user.id).catch(() => []);
+          const manualBookmarks = bookmarks.filter((b) => b.type === 'manual');
+          const hydrated: Manual[] = [];
+          for (const b of manualBookmarks.slice(0, 8)) {
+            const m = await fetchManual(b.id).catch(() => null);
+            if (m) hydrated.push(m);
+          }
+          setSavedManuals(hydrated);
+        }
       } catch (err: any) {
-        toast.error(err?.message ?? 'Failed to load manuals');
+        toast.error(err?.message ?? t('common.loadFailed'));
       }
     },
-    [toast]
+    [toast, t, user]
   );
 
   useEffect(() => {
@@ -57,6 +76,10 @@ export default function ManualsIndex() {
       return title.includes(q);
     });
   }, [manuals, query, i18n.language]);
+
+  const isBrowsing = !query && filter === 'all';
+  const showSaved = isBrowsing && savedManuals.length > 0;
+  const gridHeading = query ? t('videos.searchResults') : t('manuals.allManuals');
 
   const stats = useMemo(() => {
     const enCount = manuals.filter((m) => m.pdf_url_en).length;
@@ -96,6 +119,27 @@ export default function ManualsIndex() {
         </View>
       </View>
 
+      {/* Saved manuals rail */}
+      {showSaved ? (
+        <View style={styles.savedSection}>
+          <SectionHeader
+            title={t('profile.bookmarks')}
+            action={t('common.seeAll')}
+            onActionPress={() => router.push('/profile/bookmarks')}
+          />
+          <FlatList
+            data={savedManuals}
+            horizontal
+            keyExtractor={(m) => m.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.savedRail}
+            renderItem={({ item }) => (
+              <ManualCard manual={item} variant="cover" width={140} />
+            )}
+          />
+        </View>
+      ) : null}
+
       <View style={styles.chips}>
         <CategoryChip
           label={t('manuals.all')}
@@ -114,6 +158,14 @@ export default function ManualsIndex() {
         />
       </View>
 
+      {/* Grid heading */}
+      <View style={styles.gridHeader}>
+        <Text style={styles.gridTitle}>{gridHeading}</Text>
+        {!loading && filtered.length > 0 ? (
+          <Text style={styles.gridCount}>{filtered.length}</Text>
+        ) : null}
+      </View>
+
       {loading ? (
         <View style={styles.list}>
           <ManualCardSkeleton />
@@ -122,9 +174,10 @@ export default function ManualsIndex() {
         </View>
       ) : (
         <FlatList
+          key={`cols-${columns}`}
           data={filtered}
           keyExtractor={(m) => m.id}
-          numColumns={2}
+          numColumns={columns}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.grid}
           refreshControl={
@@ -151,6 +204,9 @@ export default function ManualsIndex() {
 
 const styles = StyleSheet.create({
   header: {
+    width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     gap: spacing.xs,
@@ -192,12 +248,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   searchWrap: { marginTop: spacing.md },
+  savedSection: { paddingTop: spacing.xl, gap: spacing.sm, paddingHorizontal: spacing.lg },
+  savedRail: { paddingRight: spacing.lg, gap: spacing.md, alignItems: 'flex-start' },
   chips: {
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.lg,
   },
+  gridHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  gridTitle: { ...typography.h2, color: colors.text, fontSize: 18 },
+  gridCount: { color: colors.textMuted, ...typography.caption, fontWeight: '700' },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
   grid: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
   row: { gap: spacing.md },

@@ -14,20 +14,35 @@
     "s3": {
       "title": "One app, all your devices",
       "body": "Pick up where you left off across phone, tablet and web. Your progress travels with you."
-    }
+    },
+    "s4": {
+      "title": "Download and watch offline",
+      "body": "Save your favorite videos to watch without internet — on a plane, on the road, anywhere."
+    },
+    "back": "Back"
   },
   "common": {
-    "appName": "Training App",
+    "appName": "Tech Advancement",
     "loading": "Loading...",
     "retry": "Retry",
     "cancel": "Cancel",
+    "ok": "OK",
+    "close": "Close",
     "save": "Save",
     "search": "Search",
     "back": "Back",
     "language": "Language",
     "english": "English",
     "spanish": "Spanish",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "loadFailed": "Couldn't load. Pull down to retry.",
+    "couldNotUpdate": "Could not update"
+  },
+  "a11y": {
+    "play": "Play",
+    "pause": "Pause",
+    "bookmarkAdd": "Save",
+    "bookmarkRemove": "Remove from saved"
   },
   "auth": {
     "signIn": "Sign in",
@@ -47,17 +62,16 @@
     "loginSubtitle": "Continue your training journey",
     "registerHero": "Create your account",
     "registerSubtitle": "Join thousands of learners worldwide",
+    "brandTagline": "Train smarter. Anywhere.",
+    "brandBullets": {
+      "0": "Bilingual video lessons by topic",
+      "1": "PDF manuals you can read in-app",
+      "2": "Download once, learn offline"
+    },
     "forgotLink": "Forgot password?",
     "orContinueWith": "or continue with",
     "signInWithApple": "Continue with Apple",
     "signInWithGoogle": "Continue with Google",
-    "twoFactor": "Two-factor authentication",
-    "twoFactorEnabled": "Two-factor authentication is enabled",
-    "twoFactorEnable": "Enable two-factor",
-    "twoFactorDisable": "Disable two-factor",
-    "twoFactorScan": "Scan this QR code in an authenticator app (Google Authenticator, 1Password, Authy).",
-    "twoFactorCode": "6-digit code",
-    "twoFactorVerify": "Verify code",
     "forgotTitle": "Reset your password",
     "forgotSubtitle": "We'll email you a link to set a new password.",
     "forgotCta": "Send reset link",
@@ -85,7 +99,8 @@
     "home": "Home",
     "videos": "Videos",
     "manuals": "Manuals",
-    "profile": "Profile"
+    "profile": "Profile",
+    "admin": "Admin"
   },
   "home": {
     "title": "Welcome",
@@ -95,7 +110,12 @@
     "latestManuals": "Latest manuals",
     "newVideos": "New videos",
     "newVideosSub": "Recently added",
-    "fromCategory": "More in {{category}}"
+    "fromCategory": "More in {{category}}",
+    "resumeEyebrow": "Pick up where you left off",
+    "resumeFromTime": "Resume from {{time}}",
+    "resumeAccessibility": "Resume {{title}}",
+    "percentComplete": "{{percent}}% complete",
+    "emptyDesc": "Sign out and back in if this keeps happening."
   },
   "videos": {
     "title": "Training videos",
@@ -105,6 +125,8 @@
     "minutes": "min",
     "empty": "No videos in this category yet",
     "emptySearch": "No videos match your search",
+    "allVideos": "All videos",
+    "searchResults": "Search results",
     "watched": "watched",
     "save": "Save",
     "share": "Share",
@@ -116,9 +138,16 @@
     "instructor": "Instructor",
     "chapters": "Chapters",
     "notesTitle": "My notes",
-    "notesPlaceholder": "Type your notes here. They're saved automatically and only visible to you.",
+    "notesPlaceholder": "Type your note. It's saved automatically and only visible to you.",
     "notesSaving": "Saving…",
     "notesSaved": "Saved",
+    "notesEmpty": "No notes yet. Tap “Add note” to bookmark moments while you watch.",
+    "addNote": "Add note",
+    "editNote": "Edit note",
+    "deleteNote": "Delete note",
+    "deleteNoteConfirm": "Delete this note?",
+    "more": "More",
+    "noTimestamp": "No timestamp",
     "upNext": "Up next",
     "playNow": "Play now",
     "playbackSpeed": "Playback speed",
@@ -131,7 +160,11 @@
     "removeDownload": "Remove download",
     "confirmRemoveDownload": "Remove this downloaded video?",
     "downloadFailed": "Download failed",
-    "downloadOnDeviceOnly": "Downloads are only available on the mobile app."
+    "downloadOnDeviceOnly": "Downloads are only available on the mobile app.",
+    "resumeTitle": "Continue watching?",
+    "resumeSubtitle": "You left off at {{time}}",
+    "resume": "Resume",
+    "startOver": "Start over"
   },
   "manuals": {
     "title": "Manuals",
@@ -143,7 +176,10 @@
     "downloaded": "Saved to device",
     "pages": "pages",
     "empty": "No manuals available",
-    "emptySearch": "No manuals match your search"
+    "emptySearch": "No manuals match your search",
+    "about": "About",
+    "format": "Format",
+    "allManuals": "All manuals"
   },
   "search": {
     "title": "Search",
@@ -152,7 +188,13 @@
     "startTitle": "Start typing",
     "startDesc": "Search across all training videos and PDF manuals.",
     "emptyTitle": "No results",
-    "emptyDesc": "Try a different keyword."
+    "emptyDesc": "Try a different keyword.",
+    "filters": {
+      "all": "All",
+      "videos": "Videos",
+      "manuals": "Manuals",
+      "allCategories": "All categories"
+    }
   },
   "profile": {
     "title": "Profile",
@@ -180,7 +222,13 @@
     "deleteAccount": "Delete account",
     "deleteAccountWarning": "This permanently removes your profile, sessions, and access to all content. This cannot be undone.",
     "deleteAccountConfirm": "Yes, delete my account",
-    "legal": "Legal"
+    "legal": "Legal",
+    "notes": "Notes",
+    "notesSub": "Your notes across every video",
+    "notesEmptyTitle": "No notes yet",
+    "notesEmptyDesc": "While watching a video, tap \"Add note\" to bookmark moments worth keeping.",
+    "notesCount_one": "{{count}} note",
+    "notesCount_other": "{{count}} notes"
   },
   "notFound": {
     "title": "Page not found",
@@ -189,6 +237,7 @@
   },
   "legal": {
     "updatedAt": "2026-05-13",
+    "updatedLabel": "Updated {{date}}",
     "termsLink": "Terms of service",
     "privacyLink": "Privacy policy",
     "terms": {
@@ -307,9 +356,20 @@
       "users": "Users",
       "series": "Series",
       "seriesCount_one": "{{count}} series",
-      "seriesCount_other": "{{count}} series"
+      "seriesCount_other": "{{count}} series",
+      "videosCount_one": "{{count}} video",
+      "videosCount_other": "{{count}} videos",
+      "manualsCount_one": "{{count}} manual",
+      "manualsCount_other": "{{count}} manuals",
+      "categoriesCount_one": "{{count}} category",
+      "categoriesCount_other": "{{count}} categories",
+      "usersCount_one": "{{count}} user",
+      "usersCount_other": "{{count}} users"
     },
     "rowOrder": "order {{n}}",
+    "rowPages_one": "{{count}} page",
+    "rowPages_other": "{{count}} pages",
+    "helloFallback": "admin",
     "new": {
       "video": "New video",
       "manual": "New manual",
@@ -393,12 +453,14 @@
     },
     "errors": {
       "titleRequired": "Title is required",
+      "nameRequired": "Name is required",
       "thumbnailRequired": "Upload a thumbnail",
       "videoRequired": "Upload a video",
       "pdfRequired": "Upload at least one PDF (EN or ES)",
       "categoryRequired": "Select a category",
       "save": "Failed to save",
-      "load": "Failed to load"
+      "load": "Failed to load",
+      "generic": "Error"
     },
     "users": {
       "you": "you",
@@ -419,7 +481,9 @@
     "uploader": {
       "select": "Select file",
       "replace": "Replace file",
-      "uploading": "Uploading {{size}} MB..."
+      "uploading": "Uploading {{size}} MB...",
+      "success": "File uploaded",
+      "uploadFailed": "Upload failed"
     }
   }
 }

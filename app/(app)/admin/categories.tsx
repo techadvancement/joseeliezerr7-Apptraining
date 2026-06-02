@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { AdminField } from '@/components/admin/AdminField';
@@ -24,6 +25,7 @@ import {
   updateCategory,
 } from '@/lib/admin';
 import type { VideoCategory } from '@/lib/supabase';
+import { thumb } from '@/lib/image';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
 type Mode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; cat: VideoCategory };
@@ -31,6 +33,9 @@ type Mode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; cat: VideoCa
 export default function AdminCategories() {
   const router = useRouter();
   const toast = useToast();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const catName = (c: VideoCategory) => (lang === 'es' ? c.name_es : c.name_en);
   const [items, setItems] = useState<VideoCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<Mode>({ kind: 'list' });
@@ -41,7 +46,7 @@ export default function AdminCategories() {
       const c = await listAllCategories();
       setItems(c);
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error');
+      toast.error(e?.message ?? t('admin.errors.generic'));
     } finally {
       setLoading(false);
     }
@@ -55,90 +60,95 @@ export default function AdminCategories() {
     const doDelete = async () => {
       try {
         await deleteCategory(c.id);
-        toast.success('Categoría eliminada');
+        toast.success(t('admin.toasts.deletedCategory'));
         load();
       } catch (e: any) {
-        toast.error(e?.message ?? 'Error');
+        toast.error(e?.message ?? t('admin.errors.generic'));
       }
     };
+    const msg = t('admin.confirms.deleteCategory', { name: catName(c) });
     if (typeof window !== 'undefined' && window.confirm) {
-      if (window.confirm(`¿Eliminar "${c.name_es}"? Sus videos quedarán sin categoría.`)) doDelete();
+      if (window.confirm(msg)) doDelete();
     } else {
-      Alert.alert('Eliminar', `¿Eliminar "${c.name_es}"?`, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: doDelete },
+      Alert.alert(t('admin.confirms.delete'), msg, [
+        { text: t('admin.confirms.cancel'), style: 'cancel' },
+        { text: t('admin.confirms.delete'), style: 'destructive', onPress: doDelete },
       ]);
     }
   }
 
+  const innerStyle = mode.kind === 'list' ? styles.innerList : styles.innerForm;
+
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
-            hitSlop={12}
-            style={styles.back}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow}>ADMIN · CATEGORÍAS</Text>
-            <Text style={styles.title}>
-              {mode.kind === 'list'
-                ? `${items.length} categorías`
-                : mode.kind === 'create'
-                ? 'Nueva categoría'
-                : `Editar: ${mode.cat.name_es}`}
-            </Text>
-          </View>
-          {mode.kind === 'list' ? (
+        <View style={innerStyle}>
+          <View style={styles.header}>
             <Pressable
-              onPress={() => setMode({ kind: 'create' })}
-              style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
+              hitSlop={12}
+              style={styles.back}
             >
-              <Ionicons name="add" size={20} color="#fff" />
+              <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
-          ) : null}
-        </View>
-
-        {mode.kind === 'list' ? (
-          loading ? (
-            <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
-          ) : (
-            <View style={{ gap: spacing.sm }}>
-              {items.map((c) => (
-                <View key={c.id} style={styles.row}>
-                  {c.thumbnail_url ? (
-                    <Image source={c.thumbnail_url} style={styles.rowThumb} contentFit="cover" />
-                  ) : (
-                    <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{c.name_es}</Text>
-                    <Text style={styles.rowMeta}>
-                      {c.slug} · orden {c.order_index}
-                    </Text>
-                  </View>
-                  <Pressable onPress={() => setMode({ kind: 'edit', cat: c })} style={styles.iconBtn}>
-                    <Ionicons name="create-outline" size={18} color={colors.text} />
-                  </Pressable>
-                  <Pressable onPress={() => confirmDelete(c)} style={styles.iconBtn}>
-                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                  </Pressable>
-                </View>
-              ))}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.eyebrow}>{t('admin.labels.categories')}</Text>
+              <Text style={styles.title}>
+                {mode.kind === 'list'
+                  ? t('admin.titles.categoriesCount', { count: items.length })
+                  : mode.kind === 'create'
+                  ? t('admin.new.category')
+                  : t('admin.edit.category', { name: catName(mode.cat) })}
+              </Text>
             </View>
-          )
-        ) : (
-          <CategoryForm
-            initial={mode.kind === 'edit' ? mode.cat : undefined}
-            onSaved={() => {
-              setMode({ kind: 'list' });
-              load();
-            }}
-          />
-        )}
+            {mode.kind === 'list' ? (
+              <Pressable
+                onPress={() => setMode({ kind: 'create' })}
+                style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {mode.kind === 'list' ? (
+            loading ? (
+              <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
+            ) : (
+              <View style={{ gap: spacing.sm }}>
+                {items.map((c) => (
+                  <View key={c.id} style={styles.row}>
+                    {c.thumbnail_url ? (
+                      <Image source={thumb(c.thumbnail_url, 128)} style={styles.rowThumb} contentFit="cover" />
+                    ) : (
+                      <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rowTitle}>{catName(c)}</Text>
+                      <Text style={styles.rowMeta}>
+                        {c.slug} · {t('admin.rowOrder', { n: c.order_index })}
+                      </Text>
+                    </View>
+                    <Pressable onPress={() => setMode({ kind: 'edit', cat: c })} style={styles.iconBtn}>
+                      <Ionicons name="create-outline" size={18} color={colors.text} />
+                    </Pressable>
+                    <Pressable onPress={() => confirmDelete(c)} style={styles.iconBtn}>
+                      <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )
+          ) : (
+            <CategoryForm
+              initial={mode.kind === 'edit' ? mode.cat : undefined}
+              onSaved={() => {
+                setMode({ kind: 'list' });
+                load();
+              }}
+            />
+          )}
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -152,6 +162,7 @@ function CategoryForm({
   onSaved: () => void;
 }) {
   const toast = useToast();
+  const { t } = useTranslation();
   const [nameEn, setNameEn] = useState(initial?.name_en ?? '');
   const [nameEs, setNameEs] = useState(initial?.name_es ?? '');
   const [slug, setSlug] = useState(initial?.slug ?? '');
@@ -161,7 +172,7 @@ function CategoryForm({
 
   async function onSave() {
     if (!nameEn.trim() || !nameEs.trim()) {
-      toast.error('El nombre es obligatorio');
+      toast.error(t('admin.errors.nameRequired'));
       return;
     }
     const payload = {
@@ -175,14 +186,14 @@ function CategoryForm({
       setSaving(true);
       if (initial) {
         await updateCategory(initial.id, payload);
-        toast.success('Categoría actualizada');
+        toast.success(t('admin.toasts.savedCategory'));
       } else {
         await createCategory(payload);
-        toast.success('Categoría creada');
+        toast.success(t('admin.toasts.createdCategory'));
       }
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error al guardar');
+      toast.error(e?.message ?? t('admin.errors.save'));
     } finally {
       setSaving(false);
     }
@@ -190,25 +201,25 @@ function CategoryForm({
 
   return (
     <View style={{ gap: spacing.md }}>
-      <AdminField label="Nombre (Inglés)" value={nameEn} onChangeText={setNameEn} placeholder="BTT Writer" />
-      <AdminField label="Nombre (Español)" value={nameEs} onChangeText={setNameEs} placeholder="BTT Writer" />
+      <AdminField label={t('admin.form.nameEn')} value={nameEn} onChangeText={setNameEn} placeholder="BTT Writer" />
+      <AdminField label={t('admin.form.nameEs')} value={nameEs} onChangeText={setNameEs} placeholder="BTT Writer" />
       <AdminField
-        label="Slug (URL)"
+        label={t('admin.form.slug')}
         value={slug}
         onChangeText={setSlug}
         placeholder={slugify(nameEn) || 'btt-writer'}
-        hint="Se autocompleta si lo dejas vacío"
+        hint={t('admin.form.slugHint')}
         autoCapitalize="none"
       />
       <AdminField
-        label="Orden"
+        label={t('admin.form.order')}
         value={order}
         onChangeText={setOrder}
         keyboardType="number-pad"
         placeholder="1"
       />
       <View>
-        <Text style={styles.fieldLabel}>Imagen de portada (1280×720 recomendado)</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.thumbnailCategory')}</Text>
         <FilePicker
           bucket="thumbnails"
           accept="image/*"
@@ -217,13 +228,25 @@ function CategoryForm({
           onUploaded={(url) => setThumbnail(url)}
         />
       </View>
-      <Button label={saving ? 'Guardando...' : initial ? 'Guardar cambios' : 'Crear categoría'} onPress={onSave} loading={saving} />
+      <Button
+        label={
+          saving
+            ? t('admin.buttons.saving')
+            : initial
+            ? t('admin.buttons.save')
+            : t('admin.buttons.createCategory')
+        }
+        onPress={onSave}
+        loading={saving}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, alignItems: 'center' },
+  innerList: { width: '100%', maxWidth: 1100, gap: spacing.lg },
+  innerForm: { width: '100%', maxWidth: 880, gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   back: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface,

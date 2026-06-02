@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { haptics } from '@/lib/haptics';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
 export function BottomSheet({
@@ -49,7 +50,10 @@ export function BottomSheetOption({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptics.selection();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.option,
         selected && styles.optionSelected,

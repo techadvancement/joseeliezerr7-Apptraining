@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -15,10 +16,10 @@ import { z } from 'zod';
 import { Screen } from '@/components/ui/Screen';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { AuthCard } from '@/components/AuthCard';
 import { useToast } from '@/components/Toast';
 import { useAuth } from '@/lib/auth';
-import { SUPABASE_CONFIGURED } from '@/lib/supabase';
-import { isAppleAvailable, signInWithApple, signInWithGoogle } from '@/lib/oauth';
+import { useAuthSplit } from '@/lib/responsive';
 import { colors, spacing, typography } from '@/constants/theme';
 
 const schema = z.object({
@@ -31,38 +32,12 @@ export default function LoginScreen() {
   const router = useRouter();
   const toast = useToast();
   const { signIn } = useAuth();
+  const split = useAuthSplit();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; root?: string }>({});
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<null | 'apple' | 'google'>(null);
-
-  async function onApple() {
-    setOauthLoading('apple');
-    try {
-      await signInWithApple();
-      router.replace('/(app)');
-    } catch (err: any) {
-      if (err?.code !== 'ERR_REQUEST_CANCELED') {
-        toast.error(err?.message ?? 'Apple sign-in failed');
-      }
-    } finally {
-      setOauthLoading(null);
-    }
-  }
-
-  async function onGoogle() {
-    setOauthLoading('google');
-    try {
-      await signInWithGoogle();
-      router.replace('/(app)');
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Google sign-in failed');
-    } finally {
-      setOauthLoading(null);
-    }
-  }
 
   async function onSubmit() {
     setErrors({});
@@ -99,12 +74,17 @@ export default function LoginScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.brand}>
-            <View style={styles.logo}>
-              <Ionicons name="play-circle" size={32} color="#fff" />
+          <AuthCard>
+          {split ? null : (
+            <View style={styles.brand}>
+              <Image
+                source={require('@/assets/images/logo.png')}
+                style={styles.logo}
+                contentFit="contain"
+              />
+              <Text style={styles.brandText}>{t('common.appName')}</Text>
             </View>
-            <Text style={styles.brandText}>{t('common.appName')}</Text>
-          </View>
+          )}
 
           <View style={styles.hero}>
             <Text style={styles.title}>{t('auth.loginHero')}</Text>
@@ -159,32 +139,6 @@ export default function LoginScreen() {
             </Link>
           </View>
 
-          {SUPABASE_CONFIGURED ? (
-            <View style={styles.oauth}>
-              <View style={styles.dividerRow}>
-                <View style={styles.divider} />
-                <Text style={styles.dividerText}>{t('auth.orContinueWith')}</Text>
-                <View style={styles.divider} />
-              </View>
-              {(isAppleAvailable || Platform.OS === 'web') ? (
-                <Button
-                  label={t('auth.signInWithApple')}
-                  variant="secondary"
-                  onPress={onApple}
-                  loading={oauthLoading === 'apple'}
-                  fullWidth
-                />
-              ) : null}
-              <Button
-                label={t('auth.signInWithGoogle')}
-                variant="secondary"
-                onPress={onGoogle}
-                loading={oauthLoading === 'google'}
-                fullWidth
-              />
-            </View>
-          ) : null}
-
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.noAccount')}</Text>
             <Link href="/(auth)/register" asChild>
@@ -193,6 +147,7 @@ export default function LoginScreen() {
               </Pressable>
             </Link>
           </View>
+          </AuthCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -202,18 +157,15 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: spacing.xl,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xxl,
+    paddingVertical: spacing.xl,
   },
   brand: { alignItems: 'center', gap: spacing.md },
   logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 112,
+    height: 112,
+    borderRadius: 24,
   },
   brandText: { ...typography.h3, color: colors.text },
   hero: { alignItems: 'center', gap: spacing.xs },
@@ -230,8 +182,4 @@ const styles = StyleSheet.create({
   link: { color: colors.primary, fontWeight: '700' },
   forgotLink: { alignSelf: 'center', padding: spacing.sm },
   forgotLinkText: { color: colors.textMuted, fontWeight: '600' },
-  oauth: { gap: spacing.md },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  divider: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { color: colors.textMuted, ...typography.caption },
 });

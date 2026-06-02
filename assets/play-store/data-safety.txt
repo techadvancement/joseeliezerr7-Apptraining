@@ -1,0 +1,167 @@
+================================================================
+TECH ADVANCEMENT — Google Play Data Safety form (DRAFT)
+================================================================
+
+This file maps every question Play Console asks → the answer to
+select, based on the actual code. Open Play Console → Policy →
+App content → Data safety, then walk through these sections.
+
+----------------------------------------------------------------
+1) DATA COLLECTION & SECURITY (top-level questions)
+----------------------------------------------------------------
+
+Q: Does your app collect or share any of the required user data types?
+A: YES.
+
+Q: Is all of the user data collected by your app encrypted in transit?
+A: YES.  (All traffic goes over HTTPS to Supabase + Expo Push.)
+
+Q: Do you provide a way for users to request that their data be deleted?
+A: YES — in-app at Profile → Delete account (RPC delete_account()),
+   plus a public web URL:
+   https://training-app.solucionestechn.com/delete-account
+
+Q: Has your app been independently validated against a global security standard?
+A: NO. (No SOC 2 / MASA audit performed.)
+
+Q: Does your app comply with Play Families Policy?
+A: NO — app is not directed at children.
+
+
+----------------------------------------------------------------
+2) DATA TYPES COLLECTED
+----------------------------------------------------------------
+
+Mark each item below as COLLECTED. For every one of them:
+  • Collected:        YES
+  • Shared with 3rd:  NO
+  • Optional/Required: see notes
+  • Ephemeral:        NO (persisted in Supabase)
+  • Purpose:          see notes
+
+────────────  Personal info  ────────────
+
+[x] Name
+    Required. Stored in profiles.full_name.
+    Purpose: Account management.
+
+[x] Email address
+    Required for sign-up / login.
+    Purpose: Account management, App functionality.
+
+[x] User IDs
+    Supabase auth user UUID. Used to scope all per-user rows.
+    Purpose: Account management, App functionality.
+
+[x] Phone number
+    OPTIONAL. Stored in profiles.phone (nullable).
+    Purpose: Account management.
+
+[x] Other info — "Country"
+    Required at sign-up. Stored in profiles.country.
+    Purpose: Account management, Personalization (locale hint).
+
+────────────  Photos and videos  ────────────
+
+[x] Photos
+    OPTIONAL avatar / profile picture uploaded by the user.
+    Stored in Supabase storage. Linked to the user UUID.
+    Purpose: Account management (profile picture).
+
+────────────  App activity  ────────────
+
+[x] App interactions
+    Video playback progress (video_progress.position_seconds /
+    duration_seconds) is persisted so the user can resume across
+    devices.
+    Purpose: App functionality, Personalization (resume position).
+
+[x] Other user-generated content
+    – Bookmarks: list of video/manual IDs the user saved.
+    – Video notes: free-text notes the user types against a video.
+    Purpose: App functionality.
+
+────────────  App info and performance  ────────────
+
+[x] Other app performance data — "Push notification token"
+    Expo push token stored in profiles.push_token.
+    Purpose: App functionality (delivering "new video published"
+    notifications).
+
+────────────  NOT COLLECTED (leave unchecked)  ────────────
+- Financial info, Health & fitness, Messages, Contacts,
+  Calendar, Files & docs, Web browsing history, Audio files,
+  Location (approximate or precise), Device or other IDs (no
+  advertising ID, no MAC/IMEI), Crash logs, Diagnostics,
+  Performance traces.
+
+
+----------------------------------------------------------------
+3) DATA SHARING
+----------------------------------------------------------------
+
+No data is shared with third parties for advertising, analytics, or
+any other purpose. All data is processed by:
+  • Self-hosted Supabase (Postgres + storage + auth) operated by
+    Soluciones Tech on its own infrastructure.
+  • Expo Push Service (Apple APNs / Google FCM transport only)
+    when sending push notifications. The push payload contains
+    only the notification text + video deeplink, no PII.
+
+→ For every data type above, answer "Not shared".
+
+
+----------------------------------------------------------------
+4) PURPOSES — quick reference per data type
+----------------------------------------------------------------
+
+| Data type           | Account mgmt | App function | Personalization |
+|---------------------|:------------:|:------------:|:---------------:|
+| Name                |      X       |              |                 |
+| Email               |      X       |       X      |                 |
+| User IDs            |      X       |       X      |                 |
+| Phone number        |      X       |              |                 |
+| Country             |      X       |              |        X        |
+| Photos (avatar)     |      X       |              |                 |
+| App interactions    |              |       X      |        X        |
+| User content        |              |       X      |                 |
+| Push token          |              |       X      |                 |
+
+Do NOT mark "Advertising or marketing", "Analytics", "Fraud
+prevention", or "Developer communications" for any of these —
+none of those uses apply.
+
+
+----------------------------------------------------------------
+5) PERMISSIONS DECLARED (sanity-check)
+----------------------------------------------------------------
+
+app.json android.permissions:
+  - android.permission.RECORD_AUDIO   ← FLAG: declared but UNUSED
+                                        in code (no Audio.Recording
+                                        anywhere). Remove from
+                                        app.json before the next
+                                        AAB to avoid Play asking
+                                        about audio recording in
+                                        the form.
+
+ios.infoPlist.UIBackgroundModes:
+  - audio  (audio playback in background — ties to expo-av)
+
+ios.infoPlist.NSPhotoLibraryUsageDescription:
+  - present (avatar picker via expo-image-picker)
+
+
+----------------------------------------------------------------
+6) FOLLOW-UPS TO RESOLVE BEFORE SUBMITTING
+----------------------------------------------------------------
+
+1. Remove unused RECORD_AUDIO from app.json (+ rebuild AAB).
+2. Confirm whether Soluciones Tech wants to declare encryption at
+   rest. Self-hosted Postgres typically uses the disk encryption
+   of the VPS. Default safe answer is to leave "encrypted at rest"
+   UNCHECKED unless you can confirm the disk is encrypted. (It
+   does not appear in the required questions — only in security
+   practices.)
+3. Confirm the support contact for the listing:
+   solucionestechn87@gmail.com  ← already in legal pages.

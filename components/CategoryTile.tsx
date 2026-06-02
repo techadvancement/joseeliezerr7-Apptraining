@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
+import { thumb } from '@/lib/image';
 import type { VideoCategory } from '@/lib/supabase';
 
 type Variant = 'tile' | 'feature';
@@ -29,7 +30,7 @@ export function CategoryTile({
       >
         {category.thumbnail_url ? (
           <Image
-            source={category.thumbnail_url}
+            source={thumb(category.thumbnail_url, 1280, { quality: 75 })}
             contentFit="cover"
             transition={200}
             style={StyleSheet.absoluteFill}
@@ -63,7 +64,7 @@ export function CategoryTile({
     >
       {category.thumbnail_url ? (
         <Image
-          source={category.thumbnail_url}
+          source={thumb(category.thumbnail_url, 640)}
           contentFit="cover"
           transition={200}
           style={StyleSheet.absoluteFill}

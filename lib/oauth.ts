@@ -6,11 +6,27 @@ import { supabase, SUPABASE_CONFIGURED } from './supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export const isAppleAvailable = Platform.OS === 'ios';
+// Apple button is shown on iOS (native flow) and on web (Supabase OAuth flow).
+// On Android there is no good Apple sign-in path, so we hide it there.
+export const isAppleAvailable = Platform.OS === 'ios' || Platform.OS === 'web';
 
 export async function signInWithApple(): Promise<void> {
   if (!SUPABASE_CONFIGURED) throw new Error('Supabase not configured');
-  if (Platform.OS !== 'ios') throw new Error('Sign in with Apple is iOS-only');
+
+  // Web: piggyback on the Supabase-hosted OAuth flow, same as Google.
+  if (Platform.OS === 'web') {
+    const redirectTo =
+      typeof window !== 'undefined' ? window.location.origin + '/' : undefined;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'apple',
+      options: { redirectTo, skipBrowserRedirect: false },
+    });
+    if (error) throw error;
+    return;
+  }
+
+  if (Platform.OS !== 'ios') throw new Error('Sign in with Apple is not available on this platform');
+
   const credential = await AppleAuthentication.signInAsync({
     requestedScopes: [
       AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -30,10 +46,13 @@ export async function signInWithApple(): Promise<void> {
 export async function signInWithGoogle(): Promise<void> {
   if (!SUPABASE_CONFIGURED) throw new Error('Supabase not configured');
 
-  const redirectTo = AuthSession.makeRedirectUri({
-    scheme: 'trainingapp',
-    path: 'auth-callback',
-  });
+  const redirectTo =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? window.location.origin + '/'
+      : AuthSession.makeRedirectUri({
+          scheme: 'techadvancement',
+          path: 'auth-callback',
+        });
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

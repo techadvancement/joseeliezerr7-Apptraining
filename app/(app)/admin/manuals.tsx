@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { Button } from '@/components/ui/Button';
 import { AdminField } from '@/components/admin/AdminField';
@@ -23,6 +24,7 @@ import {
   updateManual,
 } from '@/lib/admin';
 import type { Manual } from '@/lib/supabase';
+import { thumb } from '@/lib/image';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
 type Mode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; manual: Manual };
@@ -30,6 +32,9 @@ type Mode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; manual: Manu
 export default function AdminManuals() {
   const router = useRouter();
   const toast = useToast();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const manualTitle = (m: Manual) => (lang === 'es' ? m.title_es : m.title_en);
   const [items, setItems] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<Mode>({ kind: 'list' });
@@ -40,7 +45,7 @@ export default function AdminManuals() {
       const m = await listAllManuals();
       setItems(m);
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error');
+      toast.error(e?.message ?? t('admin.errors.generic'));
     } finally {
       setLoading(false);
     }
@@ -54,91 +59,96 @@ export default function AdminManuals() {
     const doDelete = async () => {
       try {
         await deleteManual(m.id);
-        toast.success('Manual eliminado');
+        toast.success(t('admin.toasts.deletedManual'));
         load();
       } catch (e: any) {
-        toast.error(e?.message ?? 'Error');
+        toast.error(e?.message ?? t('admin.errors.generic'));
       }
     };
+    const msg = t('admin.confirms.deleteManual', { name: manualTitle(m) });
     if (typeof window !== 'undefined' && window.confirm) {
-      if (window.confirm(`¿Eliminar "${m.title_es}"?`)) doDelete();
+      if (window.confirm(msg)) doDelete();
     } else {
-      Alert.alert('Eliminar', `¿Eliminar "${m.title_es}"?`, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: doDelete },
+      Alert.alert(t('admin.confirms.delete'), msg, [
+        { text: t('admin.confirms.cancel'), style: 'cancel' },
+        { text: t('admin.confirms.delete'), style: 'destructive', onPress: doDelete },
       ]);
     }
   }
 
+  const innerStyle = mode.kind === 'list' ? styles.innerList : styles.innerForm;
+
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
-            hitSlop={12}
-            style={styles.back}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow}>ADMIN · MANUALES</Text>
-            <Text style={styles.title}>
-              {mode.kind === 'list'
-                ? `${items.length} manuales`
-                : mode.kind === 'create'
-                ? 'Nuevo manual'
-                : 'Editar manual'}
-            </Text>
-          </View>
-          {mode.kind === 'list' ? (
+        <View style={innerStyle}>
+          <View style={styles.header}>
             <Pressable
-              onPress={() => setMode({ kind: 'create' })}
-              style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => (mode.kind === 'list' ? router.back() : setMode({ kind: 'list' }))}
+              hitSlop={12}
+              style={styles.back}
             >
-              <Ionicons name="add" size={20} color="#fff" />
+              <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
-          ) : null}
-        </View>
-
-        {mode.kind === 'list' ? (
-          loading ? (
-            <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
-          ) : (
-            <View style={{ gap: spacing.sm }}>
-              {items.map((m) => (
-                <View key={m.id} style={styles.row}>
-                  {m.thumbnail_url ? (
-                    <Image source={m.thumbnail_url} style={styles.rowThumb} contentFit="cover" />
-                  ) : (
-                    <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text numberOfLines={2} style={styles.rowTitle}>{m.title_es}</Text>
-                    <Text style={styles.rowMeta}>
-                      {[m.pdf_url_en ? 'EN' : null, m.pdf_url_es ? 'ES' : null].filter(Boolean).join(' · ')}
-                      {m.page_count ? ` · ${m.page_count} pág` : ''}
-                    </Text>
-                  </View>
-                  <Pressable onPress={() => setMode({ kind: 'edit', manual: m })} style={styles.iconBtn}>
-                    <Ionicons name="create-outline" size={18} color={colors.text} />
-                  </Pressable>
-                  <Pressable onPress={() => confirmDelete(m)} style={styles.iconBtn}>
-                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                  </Pressable>
-                </View>
-              ))}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.eyebrow}>{t('admin.labels.manuals')}</Text>
+              <Text style={styles.title}>
+                {mode.kind === 'list'
+                  ? t('admin.titles.manualsCount', { count: items.length })
+                  : mode.kind === 'create'
+                  ? t('admin.new.manual')
+                  : t('admin.edit.manual')}
+              </Text>
             </View>
-          )
-        ) : (
-          <ManualForm
-            initial={mode.kind === 'edit' ? mode.manual : undefined}
-            onSaved={() => {
-              setMode({ kind: 'list' });
-              load();
-            }}
-          />
-        )}
+            {mode.kind === 'list' ? (
+              <Pressable
+                onPress={() => setMode({ kind: 'create' })}
+                style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {mode.kind === 'list' ? (
+            loading ? (
+              <ActivityIndicator color={colors.text} style={{ marginTop: spacing.xxl }} />
+            ) : (
+              <View style={{ gap: spacing.sm }}>
+                {items.map((m) => (
+                  <View key={m.id} style={styles.row}>
+                    {m.thumbnail_url ? (
+                      <Image source={thumb(m.thumbnail_url, 128)} style={styles.rowThumb} contentFit="cover" />
+                    ) : (
+                      <View style={[styles.rowThumb, { backgroundColor: colors.surfaceAlt }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text numberOfLines={2} style={styles.rowTitle}>{manualTitle(m)}</Text>
+                      <Text style={styles.rowMeta}>
+                        {[m.pdf_url_en ? 'EN' : null, m.pdf_url_es ? 'ES' : null].filter(Boolean).join(' · ')}
+                        {m.page_count ? ` · ${t('admin.rowPages', { count: m.page_count })}` : ''}
+                      </Text>
+                    </View>
+                    <Pressable onPress={() => setMode({ kind: 'edit', manual: m })} style={styles.iconBtn}>
+                      <Ionicons name="create-outline" size={18} color={colors.text} />
+                    </Pressable>
+                    <Pressable onPress={() => confirmDelete(m)} style={styles.iconBtn}>
+                      <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )
+          ) : (
+            <ManualForm
+              initial={mode.kind === 'edit' ? mode.manual : undefined}
+              onSaved={() => {
+                setMode({ kind: 'list' });
+                load();
+              }}
+            />
+          )}
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -152,6 +162,7 @@ function ManualForm({
   onSaved: () => void;
 }) {
   const toast = useToast();
+  const { t } = useTranslation();
   const [titleEn, setTitleEn] = useState(initial?.title_en ?? '');
   const [titleEs, setTitleEs] = useState(initial?.title_es ?? '');
   const [descEn, setDescEn] = useState(initial?.description_en ?? '');
@@ -163,9 +174,9 @@ function ManualForm({
   const [saving, setSaving] = useState(false);
 
   async function onSave() {
-    if (!titleEn.trim() || !titleEs.trim()) { toast.error('Título obligatorio'); return; }
-    if (!thumbnail) { toast.error('Sube la miniatura'); return; }
-    if (!pdfEn && !pdfEs) { toast.error('Sube al menos un PDF (EN o ES)'); return; }
+    if (!titleEn.trim() || !titleEs.trim()) { toast.error(t('admin.errors.titleRequired')); return; }
+    if (!thumbnail) { toast.error(t('admin.errors.thumbnailRequired')); return; }
+    if (!pdfEn && !pdfEs) { toast.error(t('admin.errors.pdfRequired')); return; }
     try {
       setSaving(true);
       const payload = {
@@ -180,14 +191,14 @@ function ManualForm({
       };
       if (initial) {
         await updateManual(initial.id, payload);
-        toast.success('Manual actualizado');
+        toast.success(t('admin.toasts.savedManual'));
       } else {
         await createManual(payload);
-        toast.success('Manual creado');
+        toast.success(t('admin.toasts.createdManual'));
       }
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error al guardar');
+      toast.error(e?.message ?? t('admin.errors.save'));
     } finally {
       setSaving(false);
     }
@@ -195,13 +206,13 @@ function ManualForm({
 
   return (
     <View style={{ gap: spacing.md }}>
-      <AdminField label="Título (Inglés)" value={titleEn} onChangeText={setTitleEn} placeholder="User Guide" />
-      <AdminField label="Título (Español)" value={titleEs} onChangeText={setTitleEs} placeholder="Guía del usuario" />
-      <AdminField label="Descripción (Inglés)" value={descEn} onChangeText={setDescEn} multiline numberOfLines={3} />
-      <AdminField label="Descripción (Español)" value={descEs} onChangeText={setDescEs} multiline numberOfLines={3} />
+      <AdminField label={t('admin.form.titleEn')} value={titleEn} onChangeText={setTitleEn} placeholder="User Guide" />
+      <AdminField label={t('admin.form.titleEs')} value={titleEs} onChangeText={setTitleEs} placeholder="Guía del usuario" />
+      <AdminField label={t('admin.form.descriptionEn')} value={descEn} onChangeText={setDescEn} multiline numberOfLines={3} />
+      <AdminField label={t('admin.form.descriptionEs')} value={descEs} onChangeText={setDescEs} multiline numberOfLines={3} />
 
       <View>
-        <Text style={styles.fieldLabel}>Portada (800×1100 recomendado)</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.thumbnailManual')}</Text>
         <FilePicker
           bucket="thumbnails"
           accept="image/*"
@@ -212,7 +223,7 @@ function ManualForm({
       </View>
 
       <View>
-        <Text style={styles.fieldLabel}>PDF 🇺🇸 English</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.pdfEn')}</Text>
         <FilePicker
           bucket="manuals"
           accept="application/pdf"
@@ -223,7 +234,7 @@ function ManualForm({
       </View>
 
       <View>
-        <Text style={styles.fieldLabel}>PDF 🇪🇸 Español</Text>
+        <Text style={styles.fieldLabel}>{t('admin.form.pdfEs')}</Text>
         <FilePicker
           bucket="manuals"
           accept="application/pdf"
@@ -233,15 +244,27 @@ function ManualForm({
         />
       </View>
 
-      <AdminField label="Páginas (opcional)" value={pages} onChangeText={setPages} keyboardType="number-pad" placeholder="48" />
+      <AdminField label={t('admin.form.pages')} value={pages} onChangeText={setPages} keyboardType="number-pad" placeholder="48" />
 
-      <Button label={saving ? 'Guardando...' : initial ? 'Guardar cambios' : 'Crear manual'} onPress={onSave} loading={saving} />
+      <Button
+        label={
+          saving
+            ? t('admin.buttons.saving')
+            : initial
+            ? t('admin.buttons.save')
+            : t('admin.buttons.createManual')
+        }
+        onPress={onSave}
+        loading={saving}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, alignItems: 'center' },
+  innerList: { width: '100%', maxWidth: 1100, gap: spacing.lg },
+  innerForm: { width: '100%', maxWidth: 880, gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   back: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface,

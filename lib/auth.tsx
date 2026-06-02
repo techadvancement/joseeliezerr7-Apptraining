@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, SUPABASE_CONFIGURED, type Profile } from './supabase';
+import { clearCache } from './cache';
 
 type AuthState = {
   session: Session | null;
@@ -56,16 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   async function loadProfile(userId: string): Promise<Profile | null> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    if (error) {
-      console.warn('[auth] loadProfile error', error.message);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      if (error) {
+        if (__DEV__) console.warn('[auth] loadProfile error', error.message);
+        return null;
+      }
+      return data as Profile | null;
+    } catch (e) {
+      if (__DEV__) console.warn('[auth] loadProfile threw', e);
       return null;
     }
-    return data as Profile | null;
   }
 
   useEffect(() => {
@@ -74,36 +80,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     let mounted = true;
+    let settled = false;
 
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      const profile = session?.user ? await loadProfile(session.user.id) : null;
+    // Apply session to state IMMEDIATELY (loading: false). Loading the profile
+    // is a separate network call against /rest/v1/profiles and we never want
+    // it on the critical render path — if Kong/PostgREST is slow the user
+    // would otherwise stare at a blank screen forever. Profile fills in
+    // asynchronously once it returns.
+    const applySession = (session: Session | null) => {
       if (!mounted) return;
-      setState({
+      setState((s) => ({
         session,
         user: session?.user ?? null,
-        profile,
+        profile: session?.user?.id === s.user?.id ? s.profile : null,
         loading: false,
-      });
-    })();
-
-    const { data: sub } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        const profile = session?.user
-          ? await loadProfile(session.user.id)
-          : null;
-        setState({
-          session,
-          user: session?.user ?? null,
-          profile,
-          loading: false,
+      }));
+      if (session?.user) {
+        loadProfile(session.user.id).then((profile) => {
+          if (!mounted) return;
+          setState((s) =>
+            s.user?.id === session.user.id ? { ...s, profile } : s
+          );
         });
       }
-    );
+    };
+
+    // Subscribe FIRST. supabase-js v2 always emits `INITIAL_SESSION` exactly
+    // once per subscription after its internal `_recoverAndRefresh()` runs,
+    // even if the result is null. That event is the authoritative signal that
+    // auth has finished initializing — far more reliable than racing
+    // getSession() against a timeout (which is what bounced authenticated
+    // users back to /login after reload when refresh was even slightly slow).
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'USER_UPDATED'
+      ) {
+        clearCache();
+      }
+      settled = true;
+      applySession(session ?? null);
+    });
+
+    // Belt-and-suspenders backup: also call getSession() directly. If for any
+    // reason INITIAL_SESSION never fires (storage lock contention, broken SW,
+    // etc.) this gets us out of `loading` with the real session from storage.
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted || settled) return;
+        settled = true;
+        applySession(data.session ?? null);
+      } catch (e) {
+        if (__DEV__) console.warn('[auth] getSession backup error', e);
+      }
+    })();
+
+    // Final safety net: if neither path produced a result within 8s, unblock
+    // the UI. Leave session as whatever it currently is (likely null) so the
+    // user can attempt to sign in instead of staring at a black screen.
+    const bootTimeout = setTimeout(() => {
+      if (!mounted || settled) return;
+      setState((s) => (s.loading ? { ...s, loading: false } : s));
+    }, 8000);
 
     return () => {
       mounted = false;
+      clearTimeout(bootTimeout);
       sub.subscription.unsubscribe();
     };
   }, []);
@@ -121,11 +167,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }));
           return;
         }
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        // Update state synchronously so AuthGate sees the new session by the
+        // time login.tsx calls router.replace. Without this, the redirect
+        // raced ahead of onAuthStateChange and bounced the user back to /login.
+        // Profile loads in the background — never on the critical path,
+        // otherwise a slow /rest/v1/profiles call freezes the login button.
+        if (data.session) {
+          const newUser = data.session.user;
+          setState({
+            session: data.session,
+            user: newUser,
+            profile: null,
+            loading: false,
+          });
+          loadProfile(newUser.id).then((profile) => {
+            setState((s) => (s.user?.id === newUser.id ? { ...s, profile } : s));
+          });
+        }
       },
       async signUp({ email, password, fullName, country, phone }) {
         if (!SUPABASE_CONFIGURED) {

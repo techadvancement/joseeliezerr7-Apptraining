@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import type { Video } from '@/lib/supabase';
 import { formatDuration } from '@/lib/format';
+import { thumb } from '@/lib/image';
 import { colors, radius, shadow, spacing, typography } from '@/constants/theme';
 
 type Props = {
@@ -37,7 +38,7 @@ export function UpNextOverlay({ next, seconds = 8, onPlayNow, onCancel }: Props)
           {t('videos.upNext')} · {remaining}s
         </Text>
         <View style={styles.row}>
-          <Image source={next.thumbnail_url} style={styles.thumb} contentFit="cover" />
+          <Image source={thumb(next.thumbnail_url, 200)} style={styles.thumb} contentFit="cover" />
           <View style={{ flex: 1, gap: 4 }}>
             <Text numberOfLines={2} style={styles.title}>{title}</Text>
             <Text style={styles.meta}>{formatDuration(next.duration_seconds)}</Text>

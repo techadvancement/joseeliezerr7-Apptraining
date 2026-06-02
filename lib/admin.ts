@@ -2,6 +2,7 @@
 // La seguridad real vive en las políticas RLS de Supabase (defense-in-depth).
 
 import { supabase, type Manual, type Video, type VideoCategory } from './supabase';
+import { invalidate } from './cache';
 
 const PUBLIC_STORAGE_BASE = (() => {
   const base = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -70,17 +71,23 @@ export async function createCategory(input: CategoryInput): Promise<VideoCategor
     .select('*')
     .single();
   if (error) throw error;
+  invalidate('categories');
+  invalidate('videos');
   return data as VideoCategory;
 }
 
 export async function updateCategory(id: string, patch: Partial<CategoryInput>): Promise<void> {
   const { error } = await supabase.from('video_categories').update(patch).eq('id', id);
   if (error) throw error;
+  invalidate('categories');
+  invalidate('videos');
 }
 
 export async function deleteCategory(id: string): Promise<void> {
   const { error } = await supabase.from('video_categories').delete().eq('id', id);
   if (error) throw error;
+  invalidate('categories');
+  invalidate('videos');
 }
 
 // =========================
@@ -116,17 +123,23 @@ export async function createVideo(input: VideoInput): Promise<Video> {
     .select('*')
     .single();
   if (error) throw error;
+  invalidate('videos');
+  invalidate('series');
   return data as Video;
 }
 
 export async function updateVideo(id: string, patch: Partial<VideoInput>): Promise<void> {
   const { error } = await supabase.from('videos').update(patch).eq('id', id);
   if (error) throw error;
+  invalidate('videos');
+  invalidate('series');
 }
 
 export async function deleteVideo(id: string): Promise<void> {
   const { error } = await supabase.from('videos').delete().eq('id', id);
   if (error) throw error;
+  invalidate('videos');
+  invalidate('series');
 }
 
 // =========================
@@ -158,17 +171,20 @@ export async function listAllSeries(): Promise<Series[]> {
 export async function createSeries(input: SeriesInput): Promise<Series> {
   const { data, error } = await supabase.from('series').insert(input).select('*').single();
   if (error) throw error;
+  invalidate('series');
   return data as Series;
 }
 
 export async function updateSeries(id: string, patch: Partial<SeriesInput>): Promise<void> {
   const { error } = await supabase.from('series').update(patch).eq('id', id);
   if (error) throw error;
+  invalidate('series');
 }
 
 export async function deleteSeries(id: string): Promise<void> {
   const { error } = await supabase.from('series').delete().eq('id', id);
   if (error) throw error;
+  invalidate('series');
 }
 
 // =========================
@@ -201,17 +217,20 @@ export async function createManual(input: ManualInput): Promise<Manual> {
     .select('*')
     .single();
   if (error) throw error;
+  invalidate('manuals');
   return data as Manual;
 }
 
 export async function updateManual(id: string, patch: Partial<ManualInput>): Promise<void> {
   const { error } = await supabase.from('manuals').update(patch).eq('id', id);
   if (error) throw error;
+  invalidate('manuals');
 }
 
 export async function deleteManual(id: string): Promise<void> {
   const { error } = await supabase.from('manuals').delete().eq('id', id);
   if (error) throw error;
+  invalidate('manuals');
 }
 
 // =========================

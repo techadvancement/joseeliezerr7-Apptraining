@@ -14,20 +14,35 @@
     "s3": {
       "title": "Una app, todos tus dispositivos",
       "body": "Continúa donde lo dejaste en celular, tablet y web. Tu progreso viaja contigo."
-    }
+    },
+    "s4": {
+      "title": "Descarga y mira sin conexión",
+      "body": "Guarda tus videos favoritos para verlos sin internet, en el avión o donde sea."
+    },
+    "back": "Atrás"
   },
   "common": {
-    "appName": "App de Entrenamiento",
+    "appName": "Tech Advancement",
     "loading": "Cargando...",
     "retry": "Reintentar",
     "cancel": "Cancelar",
+    "ok": "OK",
+    "close": "Cerrar",
     "save": "Guardar",
     "search": "Buscar",
     "back": "Atrás",
     "language": "Idioma",
     "english": "Inglés",
     "spanish": "Español",
-    "seeAll": "Ver todo"
+    "seeAll": "Ver todo",
+    "loadFailed": "No se pudo cargar. Desliza hacia abajo para reintentar.",
+    "couldNotUpdate": "No se pudo actualizar"
+  },
+  "a11y": {
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "bookmarkAdd": "Guardar",
+    "bookmarkRemove": "Quitar de guardados"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -47,17 +62,16 @@
     "loginSubtitle": "Continúa tu camino de entrenamiento",
     "registerHero": "Crea tu cuenta",
     "registerSubtitle": "Únete a miles de personas aprendiendo",
+    "brandTagline": "Capacítate mejor. Donde quieras.",
+    "brandBullets": {
+      "0": "Lecciones en video bilingües por tema",
+      "1": "Manuales en PDF dentro de la app",
+      "2": "Descarga una vez, aprende sin internet"
+    },
     "forgotLink": "¿Olvidaste tu contraseña?",
     "orContinueWith": "o continúa con",
     "signInWithApple": "Continuar con Apple",
     "signInWithGoogle": "Continuar con Google",
-    "twoFactor": "Verificación en dos pasos",
-    "twoFactorEnabled": "Verificación en dos pasos activada",
-    "twoFactorEnable": "Activar verificación en dos pasos",
-    "twoFactorDisable": "Desactivar verificación en dos pasos",
-    "twoFactorScan": "Escanea este QR en una app de autenticación (Google Authenticator, 1Password, Authy).",
-    "twoFactorCode": "Código de 6 dígitos",
-    "twoFactorVerify": "Verificar código",
     "forgotTitle": "Restablecer contraseña",
     "forgotSubtitle": "Te enviaremos un enlace para crear una nueva contraseña.",
     "forgotCta": "Enviar enlace",
@@ -85,7 +99,8 @@
     "home": "Inicio",
     "videos": "Videos",
     "manuals": "Manuales",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "admin": "Admin"
   },
   "home": {
     "title": "Bienvenido",
@@ -95,7 +110,12 @@
     "latestManuals": "Últimos manuales",
     "newVideos": "Nuevos videos",
     "newVideosSub": "Recién agregados",
-    "fromCategory": "Más en {{category}}"
+    "fromCategory": "Más en {{category}}",
+    "resumeEyebrow": "Continúa donde te quedaste",
+    "resumeFromTime": "Continuar desde {{time}}",
+    "resumeAccessibility": "Continuar {{title}}",
+    "percentComplete": "{{percent}}% completo",
+    "emptyDesc": "Cierra sesión y vuelve a entrar si sigue así."
   },
   "videos": {
     "title": "Videos de entrenamiento",
@@ -105,6 +125,8 @@
     "minutes": "min",
     "empty": "Aún no hay videos en esta categoría",
     "emptySearch": "Ningún video coincide con tu búsqueda",
+    "allVideos": "Todos los videos",
+    "searchResults": "Resultados",
     "watched": "visto",
     "save": "Guardar",
     "share": "Compartir",
@@ -116,9 +138,16 @@
     "instructor": "Instructor",
     "chapters": "Capítulos",
     "notesTitle": "Mis notas",
-    "notesPlaceholder": "Escribe tus notas aquí. Se guardan automáticamente y solo tú las ves.",
+    "notesPlaceholder": "Escribe tu nota. Se guarda automáticamente y solo tú la ves.",
     "notesSaving": "Guardando…",
     "notesSaved": "Guardado",
+    "notesEmpty": "Aún no hay notas. Toca “Agregar nota” para marcar momentos mientras miras.",
+    "addNote": "Agregar nota",
+    "editNote": "Editar nota",
+    "deleteNote": "Eliminar nota",
+    "deleteNoteConfirm": "¿Eliminar esta nota?",
+    "more": "Más",
+    "noTimestamp": "Sin marca de tiempo",
     "upNext": "A continuación",
     "playNow": "Ver ahora",
     "playbackSpeed": "Velocidad de reproducción",
@@ -131,7 +160,11 @@
     "removeDownload": "Eliminar descarga",
     "confirmRemoveDownload": "¿Eliminar este video descargado?",
     "downloadFailed": "Error al descargar",
-    "downloadOnDeviceOnly": "Las descargas solo están disponibles en la app móvil."
+    "downloadOnDeviceOnly": "Las descargas solo están disponibles en la app móvil.",
+    "resumeTitle": "¿Continuar viendo?",
+    "resumeSubtitle": "Te quedaste en {{time}}",
+    "resume": "Continuar",
+    "startOver": "Empezar de nuevo"
   },
   "manuals": {
     "title": "Manuales",
@@ -143,7 +176,10 @@
     "downloaded": "Guardado en el dispositivo",
     "pages": "páginas",
     "empty": "No hay manuales disponibles",
-    "emptySearch": "Ningún manual coincide con tu búsqueda"
+    "emptySearch": "Ningún manual coincide con tu búsqueda",
+    "about": "Acerca de",
+    "format": "Formato",
+    "allManuals": "Todos los manuales"
   },
   "search": {
     "title": "Buscar",
@@ -152,7 +188,13 @@
     "startTitle": "Empieza a escribir",
     "startDesc": "Busca en todos los videos de entrenamiento y manuales PDF.",
     "emptyTitle": "Sin resultados",
-    "emptyDesc": "Prueba con otra palabra."
+    "emptyDesc": "Prueba con otra palabra.",
+    "filters": {
+      "all": "Todo",
+      "videos": "Videos",
+      "manuals": "Manuales",
+      "allCategories": "Todas las categorías"
+    }
   },
   "profile": {
     "title": "Perfil",
@@ -180,7 +222,13 @@
     "deleteAccount": "Eliminar cuenta",
     "deleteAccountWarning": "Esto elimina permanentemente tu perfil, sesiones y acceso al contenido. No se puede deshacer.",
     "deleteAccountConfirm": "Sí, eliminar mi cuenta",
-    "legal": "Legal"
+    "legal": "Legal",
+    "notes": "Notas",
+    "notesSub": "Tus apuntes en cada video",
+    "notesEmptyTitle": "Aún no hay notas",
+    "notesEmptyDesc": "Mientras miras un video, toca \"Agregar nota\" para guardar momentos importantes.",
+    "notesCount_one": "{{count}} nota",
+    "notesCount_other": "{{count}} notas"
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -189,6 +237,7 @@
   },
   "legal": {
     "updatedAt": "13 may 2026",
+    "updatedLabel": "Actualizado {{date}}",
     "termsLink": "Términos del servicio",
     "privacyLink": "Política de privacidad",
     "terms": {
@@ -307,9 +356,20 @@
       "users": "Usuarios",
       "series": "Series",
       "seriesCount_one": "{{count}} serie",
-      "seriesCount_other": "{{count}} series"
+      "seriesCount_other": "{{count}} series",
+      "videosCount_one": "{{count}} video",
+      "videosCount_other": "{{count}} videos",
+      "manualsCount_one": "{{count}} manual",
+      "manualsCount_other": "{{count}} manuales",
+      "categoriesCount_one": "{{count}} categoría",
+      "categoriesCount_other": "{{count}} categorías",
+      "usersCount_one": "{{count}} usuario",
+      "usersCount_other": "{{count}} usuarios"
     },
     "rowOrder": "orden {{n}}",
+    "rowPages_one": "{{count}} pág",
+    "rowPages_other": "{{count}} págs",
+    "helloFallback": "admin",
     "new": {
       "video": "Nuevo video",
       "manual": "Nuevo manual",
@@ -393,12 +453,14 @@
     },
     "errors": {
       "titleRequired": "El título es obligatorio",
+      "nameRequired": "El nombre es obligatorio",
       "thumbnailRequired": "Sube la miniatura",
       "videoRequired": "Sube el video",
       "pdfRequired": "Sube al menos un PDF (EN o ES)",
       "categoryRequired": "Selecciona una categoría",
       "save": "Error al guardar",
-      "load": "Error al cargar"
+      "load": "Error al cargar",
+      "generic": "Error"
     },
     "users": {
       "you": "tú",
@@ -419,7 +481,9 @@
     "uploader": {
       "select": "Seleccionar archivo",
       "replace": "Reemplazar archivo",
-      "uploading": "Subiendo {{size}} MB..."
+      "uploading": "Subiendo {{size}} MB...",
+      "success": "Archivo subido",
+      "uploadFailed": "Error al subir"
     }
   }
 }

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { useToast } from '@/components/Toast';
 import { adminDeleteUser, listAdminUsers, setUserRole, type AdminUser } from '@/lib/admin';
@@ -20,6 +21,7 @@ import { colors, radius, spacing, typography } from '@/constants/theme';
 export default function AdminUsers() {
   const router = useRouter();
   const toast = useToast();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ export default function AdminUsers() {
       const u = await listAdminUsers();
       setUsers(u);
     } catch (e: any) {
-      toast.error(e?.message ?? 'Error');
+      toast.error(e?.message ?? t('admin.errors.generic'));
     } finally {
       setLoading(false);
     }
@@ -53,18 +55,19 @@ export default function AdminUsers() {
   }, [users, query]);
 
   function confirmRoleChange(u: AdminUser, newRole: 'user' | 'admin') {
+    const name = u.full_name || u.email;
     const message =
       newRole === 'admin'
-        ? `Promover a "${u.full_name || u.email}" a administrador?`
-        : `Quitar permisos de admin a "${u.full_name || u.email}"?`;
+        ? t('admin.confirms.promote', { name })
+        : t('admin.confirms.demote', { name });
     const doIt = async () => {
       try {
         setBusy(u.id);
         await setUserRole(u.id, newRole);
-        toast.success('Rol actualizado');
+        toast.success(t('admin.toasts.userRoleUpdated'));
         await load();
       } catch (e: any) {
-        toast.error(e?.message ?? 'Error');
+        toast.error(e?.message ?? t('admin.errors.generic'));
       } finally {
         setBusy(null);
       }
@@ -72,23 +75,24 @@ export default function AdminUsers() {
     if (typeof window !== 'undefined' && window.confirm) {
       if (window.confirm(message)) doIt();
     } else {
-      Alert.alert('Cambiar rol', message, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Confirmar', onPress: doIt },
+      Alert.alert(t('admin.confirms.title'), message, [
+        { text: t('admin.confirms.cancel'), style: 'cancel' },
+        { text: t('admin.confirms.confirm'), onPress: doIt },
       ]);
     }
   }
 
   function confirmDelete(u: AdminUser) {
-    const message = `Eliminar definitivamente a "${u.full_name || u.email}"? Esta acción no se puede deshacer.`;
+    const name = u.full_name || u.email;
+    const message = t('admin.confirms.deleteUser', { name });
     const doIt = async () => {
       try {
         setBusy(u.id);
         await adminDeleteUser(u.id);
-        toast.success('Usuario eliminado');
+        toast.success(t('admin.toasts.userDeleted'));
         await load();
       } catch (e: any) {
-        toast.error(e?.message ?? 'Error');
+        toast.error(e?.message ?? t('admin.errors.generic'));
       } finally {
         setBusy(null);
       }
@@ -96,9 +100,9 @@ export default function AdminUsers() {
     if (typeof window !== 'undefined' && window.confirm) {
       if (window.confirm(message)) doIt();
     } else {
-      Alert.alert('Eliminar usuario', message, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: doIt },
+      Alert.alert(t('admin.users.delete'), message, [
+        { text: t('admin.confirms.cancel'), style: 'cancel' },
+        { text: t('admin.confirms.delete'), style: 'destructive', onPress: doIt },
       ]);
     }
   }
@@ -112,13 +116,14 @@ export default function AdminUsers() {
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.inner}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow}>ADMIN · USUARIOS</Text>
-            <Text style={styles.title}>{users.length} usuarios</Text>
+            <Text style={styles.eyebrow}>{t('admin.labels.users')}</Text>
+            <Text style={styles.title}>{t('admin.titles.usersCount', { count: users.length })}</Text>
           </View>
         </View>
 
@@ -127,7 +132,7 @@ export default function AdminUsers() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Buscar por nombre o email"
+            placeholder={t('admin.users.searchPlaceholder')}
             placeholderTextColor={colors.textSubtle}
             style={styles.searchInput}
             autoCapitalize="none"
@@ -167,20 +172,20 @@ export default function AdminUsers() {
                   <View style={{ flex: 1 }}>
                     <View style={styles.nameRow}>
                       <Text style={styles.name} numberOfLines={1}>
-                        {u.full_name || '(sin nombre)'}
+                        {u.full_name || t('admin.users.noName')}
                       </Text>
                       {isAdminUser ? (
                         <View style={styles.adminBadge}>
                           <Ionicons name="shield-checkmark" size={10} color="#10B981" />
-                          <Text style={styles.adminBadgeText}>ADMIN</Text>
+                          <Text style={styles.adminBadgeText}>{t('admin.badge')}</Text>
                         </View>
                       ) : null}
-                      {isMe ? <Text style={styles.youBadge}>tú</Text> : null}
+                      {isMe ? <Text style={styles.youBadge}>{t('admin.users.you')}</Text> : null}
                     </View>
                     <Text style={styles.email} numberOfLines={1}>{u.email}</Text>
                     <Text style={styles.meta}>
-                      {u.country || '—'} · alta {formatDate(u.signed_up_at)}
-                      {u.last_sign_in_at ? ` · último login ${formatDate(u.last_sign_in_at)}` : ''}
+                      {u.country || '—'} · {t('admin.users.signedUp')} {formatDate(u.signed_up_at)}
+                      {u.last_sign_in_at ? ` · ${t('admin.users.lastLogin')} ${formatDate(u.last_sign_in_at)}` : ''}
                     </Text>
                   </View>
 
@@ -212,7 +217,7 @@ export default function AdminUsers() {
             })}
             {filtered.length === 0 ? (
               <Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: spacing.xl }}>
-                Sin resultados.
+                {t('admin.users.noResults')}
               </Text>
             ) : null}
           </View>
@@ -221,16 +226,17 @@ export default function AdminUsers() {
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <Ionicons name="arrow-up-circle-outline" size={16} color="#10B981" />
-            <Text style={styles.legendText}>Promover a admin</Text>
+            <Text style={styles.legendText}>{t('admin.users.promote')}</Text>
           </View>
           <View style={styles.legendItem}>
             <Ionicons name="arrow-down-circle-outline" size={16} color={colors.textMuted} />
-            <Text style={styles.legendText}>Quitar admin</Text>
+            <Text style={styles.legendText}>{t('admin.users.demote')}</Text>
           </View>
           <View style={styles.legendItem}>
             <Ionicons name="trash-outline" size={16} color={colors.danger} />
-            <Text style={styles.legendText}>Eliminar usuario</Text>
+            <Text style={styles.legendText}>{t('admin.users.delete')}</Text>
           </View>
+        </View>
         </View>
       </ScrollView>
     </Screen>
@@ -238,7 +244,8 @@ export default function AdminUsers() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, alignItems: 'center' },
+  inner: { width: '100%', maxWidth: 1100, gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   back: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface,
