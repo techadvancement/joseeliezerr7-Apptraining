@@ -224,12 +224,16 @@ export default function SeriesDetail() {
   );
 }
 
-const HERO_HEIGHT = 280;
-
 const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing.xxxl },
   hero: {
-    height: HERO_HEIGHT,
+    width: '100%',
+    maxWidth: 1100,
+    alignSelf: 'center',
+    aspectRatio: 16 / 9,
+    minHeight: 260,
+    maxHeight: 380,
+    overflow: 'hidden',
     backgroundColor: colors.surfaceAlt,
     position: 'relative',
     justifyContent: 'flex-end',

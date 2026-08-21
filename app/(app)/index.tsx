@@ -278,7 +278,7 @@ export default function HomeScreen() {
             <SectionHeader
               title={t('series.title')}
               action={t('common.seeAll')}
-              onActionPress={() => router.push('/videos')}
+              onActionPress={() => router.push('/series')}
             />
             <FlatList
               data={series}

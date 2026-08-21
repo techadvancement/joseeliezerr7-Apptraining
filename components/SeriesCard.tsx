@@ -22,7 +22,15 @@ function fmtTotal(seconds: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-export function SeriesCard({ series, size = 'md' }: { series: Series; size?: Size }) {
+export function SeriesCard({
+  series,
+  size = 'md',
+  fullWidth = false,
+}: {
+  series: Series;
+  size?: Size;
+  fullWidth?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const title = lang === 'es' ? series.title_es : series.title_en;
@@ -34,14 +42,16 @@ export function SeriesCard({ series, size = 'md' }: { series: Series; size?: Siz
       <Pressable
         style={({ pressed }) => [
           styles.card,
-          { width: dims.width },
+          fullWidth ? { width: '100%' } : { width: dims.width },
           pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
         ]}
       >
         <View
           style={[
             styles.thumb,
-            { width: dims.width, height: Math.round(dims.width / dims.aspect) },
+            fullWidth
+              ? { aspectRatio: dims.aspect }
+              : { width: dims.width, height: Math.round(dims.width / dims.aspect) },
           ]}
         >
           {series.thumbnail_url ? (

@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { supabase } from './supabase';
 
 export type PickedImage = {
@@ -46,8 +47,12 @@ export async function uploadAvatar(
     const res = await fetch(picked.uri);
     body = await res.blob();
   } else {
-    const res = await fetch(picked.uri);
-    body = await res.arrayBuffer();
+    // fetch(file://).arrayBuffer() returns an empty buffer on React Native.
+    // Read via expo-file-system and decode base64 → Uint8Array instead.
+    const base64 = await FileSystem.readAsStringAsync(picked.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    body = decodeBase64ToArrayBuffer(base64);
   }
 
   const { error } = await supabase.storage.from('avatars').upload(path, body, {
@@ -58,4 +63,12 @@ export async function uploadAvatar(
 
   const { data } = supabase.storage.from('avatars').getPublicUrl(path);
   return data.publicUrl;
+}
+
+function decodeBase64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = global.atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
 }

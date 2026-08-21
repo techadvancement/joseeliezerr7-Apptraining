@@ -263,6 +263,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   topBar: {
+    width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -331,7 +334,13 @@ const styles = StyleSheet.create({
   },
   pdfBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.7 },
 
-  body: { padding: spacing.lg, gap: spacing.lg },
+  body: {
+    width: '100%',
+    maxWidth: 880,
+    alignSelf: 'center',
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
   titleBlock: { gap: spacing.xs, alignItems: 'center' },
   eyebrow: {
     color: colors.primary,

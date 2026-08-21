@@ -1,6 +1,8 @@
 // Post-build HTML injection: PWA meta tags, preconnect, instant splash, SW registration.
 // Run from Dockerfile after `expo export`.
 const fs = require('fs');
+const crypto = require('crypto');
+const path = require('path');
 
 const file = process.argv[2];
 if (!file) {
@@ -9,6 +11,17 @@ if (!file) {
 }
 
 let h = fs.readFileSync(file, 'utf8');
+
+// Hash splash.png so we can cache-bust on every content change without
+// renaming the file. Browsers aggressively cache /splash.png because the
+// URL never changes; appending ?v=<hash> forces a refetch when the image
+// is actually different.
+let splashV = '';
+try {
+  const splashPath = path.join(path.dirname(file), 'splash.png');
+  const buf = fs.readFileSync(splashPath);
+  splashV = crypto.createHash('md5').update(buf).digest('hex').slice(0, 8);
+} catch (_) { splashV = String(Date.now()); }
 
 // Extract Supabase origin (if set at build time) so we can preconnect.
 const supaUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -32,7 +45,7 @@ const headTags = [
   supaOrigin ? '<link rel="dns-prefetch" href="' + supaOrigin + '" />' : '',
   '<style>html,body,#root{background-color:#0B0F1A !important;color-scheme:dark;}'
     + '#__splash{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background-color:#000;transition:opacity .45s ease;}'
-    + '#__splash img{width:62%;max-width:320px;height:auto;object-fit:contain;animation:__splashPulse 1.8s ease-in-out infinite;}'
+    + '#__splash img{width:70%;max-width:432px;height:auto;object-fit:contain;animation:__splashPulse 1.8s ease-in-out infinite;}'
     + '#__splash.__hide{opacity:0;pointer-events:none;}'
     + '@keyframes __splashPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.82;transform:scale(.96);}}'
     // Inputs/textarea: kill UA defaults + autofill white box. React Native
@@ -85,8 +98,8 @@ const boot = [
         'document.body.appendChild(d);',
       '}catch(_){}',
     '}',
-    'window.addEventListener("error",function(e){show("Error: "+(e.message||"unknown")+(e.filename?(" @ "+e.filename+":"+e.lineno):""));});',
-    'window.addEventListener("unhandledrejection",function(e){var r=e.reason;show("Unhandled rejection: "+((r&&(r.message||r.toString))?r.message||r.toString():String(r)));});',
+    'window.addEventListener("error",function(e){var s=(e.error&&e.error.stack)?("\\n"+e.error.stack):"";show("Error: "+(e.message||"unknown")+(e.filename?(" @ "+e.filename+":"+e.lineno+":"+(e.colno||0)):"")+s);});',
+    'window.addEventListener("unhandledrejection",function(e){var r=e.reason;var s=(r&&r.stack)?("\\n"+r.stack):"";show("Unhandled rejection: "+((r&&(r.message||r.toString))?r.message||r.toString():String(r))+s);});',
     // If the root never gets children within 8s, surface that too.
     'setTimeout(function(){var r=document.getElementById("root");if(r&&!r.firstChild)show("App did not mount within 8s. Bundle may have failed to execute. Open DevTools \\u2192 Console for details.");},8000);',
   '})();',
@@ -119,7 +132,7 @@ const boot = [
 // the JS bundle parses/executes. The image is served from /splash.png (copied
 // from public/ by the Dockerfile). Use a regex so we still match if expo emits
 // <body class="..."> or other attributes on the opening tag.
-var splashMarkup = '<div id="__splash"><img src="/splash.png" alt="" /></div>';
+var splashMarkup = '<div id="__splash"><img src="/splash.png?v=' + splashV + '" alt="" /></div>';
 h = h.replace(/<body([^>]*)>/, '<body$1>' + splashMarkup);
 h = h.replace('</body>', boot + '</body>');
 

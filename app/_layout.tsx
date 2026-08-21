@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -18,11 +18,33 @@ import { colors } from '@/constants/theme';
 // tree mounts. preventAutoHideAsync only affects native builds.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-function webMaxWidth(width: number): number | undefined {
-  if (width < 700) return undefined;
-  if (width < 1100) return 960;
-  if (width < 1500) return 1320;
-  if (width < 1900) return 1640;
+// Root-level error boundary. Without it, a single uncaught throw from any
+// child (e.g. an expo-router "Attempted to navigate before mounting" race
+// when a layout fires router.replace before the navigator is ready) takes
+// down the whole React tree and the user sees a permanent black screen +
+// the "App did not mount within 8s" boot banner. With this boundary we
+// re-render the tree on the next tick, which lets the navigator finish
+// mounting on the retry pass.
+type RootBoundaryState = { key: number };
+class RootBoundary extends Component<{ children: ReactNode }, RootBoundaryState> {
+  state: RootBoundaryState = { key: 0 };
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    if (__DEV__) console.warn('[root-boundary] caught', error, info);
+    // Force a remount of the subtree on the next tick. The navigator's
+    // internal ref will be re-initialized and components that previously
+    // raced it should now see isReady === true.
+    setTimeout(() => this.setState((s) => ({ key: s.key + 1 })), 50);
+  }
+  render() {
+    return <RootBoundaryShell key={this.state.key}>{this.props.children}</RootBoundaryShell>;
+  }
+}
+function RootBoundaryShell({ children }: { children: ReactNode }) {
+  return <>{children}</>;
+}
+
+function webMaxWidth(_width: number): number | undefined {
+  // Web layout fills the full viewport — no centered max-width frame.
   return undefined;
 }
 
@@ -94,7 +116,6 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const { width } = useWindowDimensions();
   const maxW = Platform.OS === 'web' ? webMaxWidth(width) : undefined;
-  const showFrame = Platform.OS === 'web' && maxW !== undefined && width > maxW + 80;
 
   useEffect(() => {
     let done = false;
@@ -127,31 +148,32 @@ export default function RootLayout() {
         style={[
           styles.frame,
           Platform.OS === 'web' && maxW !== undefined ? { maxWidth: maxW } : null,
-          showFrame && styles.frameWide,
         ]}
       >
         <SafeAreaProvider>
-          <ToastProvider>
-            <AuthProvider>
-              <DownloadsProvider>
-                <AudioPlayerProvider>
-                  <AuthGate>
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                        contentStyle: { backgroundColor: colors.bg },
-                        animation: 'fade',
-                      }}
-                    >
-                      <Stack.Screen name="(auth)" />
-                      <Stack.Screen name="(app)" />
-                      <Stack.Screen name="+not-found" />
-                    </Stack>
-                  </AuthGate>
-                </AudioPlayerProvider>
-              </DownloadsProvider>
-            </AuthProvider>
-          </ToastProvider>
+          <RootBoundary>
+            <ToastProvider>
+              <AuthProvider>
+                <DownloadsProvider>
+                  <AudioPlayerProvider>
+                    <AuthGate>
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
+                          contentStyle: { backgroundColor: colors.bg },
+                          animation: 'fade',
+                        }}
+                      >
+                        <Stack.Screen name="(auth)" />
+                        <Stack.Screen name="(app)" />
+                        <Stack.Screen name="+not-found" />
+                      </Stack>
+                    </AuthGate>
+                  </AudioPlayerProvider>
+                </DownloadsProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </RootBoundary>
         </SafeAreaProvider>
       </View>
       {!ready ? (
@@ -179,12 +201,6 @@ const styles = StyleSheet.create({
     },
     default: { flex: 1 },
   })!,
-  frameWide: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    boxShadow: '0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02)',
-  } as any,
   glowOrb: {
     position: 'absolute',
     width: 720,
