@@ -56,13 +56,13 @@
     "fullName": "Full name",
     "country": "Country",
     "phone": "Phone (optional)",
-    "loginCta": "Continue",
+    "loginCta": "Sign in",
     "registerCta": "Create account",
-    "loginHero": "Welcome back",
-    "loginSubtitle": "Continue your training journey",
+    "loginHero": "Sign in",
+    "loginSubtitle": "Enter your email and password to continue.",
     "registerHero": "Create your account",
-    "registerSubtitle": "Join thousands of learners worldwide",
-    "brandTagline": "Train smarter. Anywhere.",
+    "registerSubtitle": "It only takes a minute. You'll confirm your email before your first sign-in.",
+    "brandTagline": "Video training and field manuals for Tech Advance teams.",
     "brandBullets": {
       "0": "Bilingual video lessons by topic",
       "1": "PDF manuals you can read in-app",
@@ -85,6 +85,9 @@
     "editProfile": "Edit profile",
     "profileUpdated": "Profile updated",
     "changePhoto": "Change photo",
+    "brandFooter": "Available on iOS, Android and the web. Your progress follows you across devices.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "errors": {
       "emailRequired": "Email is required",
       "emailInvalid": "Invalid email",
@@ -92,7 +95,8 @@
       "passwordShort": "Password must be at least 8 characters",
       "passwordsDontMatch": "Passwords don't match",
       "nameRequired": "Full name is required",
-      "countryRequired": "Country is required"
+      "countryRequired": "Country is required",
+      "signInFailed": "We couldn't sign you in. Check your details and try again."
     }
   },
   "tabs": {

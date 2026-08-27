@@ -56,13 +56,13 @@
     "fullName": "Nombre completo",
     "country": "País de procedencia",
     "phone": "Teléfono (opcional)",
-    "loginCta": "Continuar",
+    "loginCta": "Iniciar sesión",
     "registerCta": "Crear cuenta",
-    "loginHero": "Bienvenido de nuevo",
-    "loginSubtitle": "Continúa tu camino de entrenamiento",
+    "loginHero": "Iniciar sesión",
+    "loginSubtitle": "Introduce tu correo y tu contraseña para continuar.",
     "registerHero": "Crea tu cuenta",
-    "registerSubtitle": "Únete a miles de personas aprendiendo",
-    "brandTagline": "Capacítate mejor. Donde quieras.",
+    "registerSubtitle": "Solo toma un minuto. Confirmarás tu correo antes de entrar por primera vez.",
+    "brandTagline": "Formación en video y manuales de campo para los equipos de Tech Advance.",
     "brandBullets": {
       "0": "Lecciones en video bilingües por tema",
       "1": "Manuales en PDF dentro de la app",
@@ -85,6 +85,9 @@
     "editProfile": "Editar perfil",
     "profileUpdated": "Perfil actualizado",
     "changePhoto": "Cambiar foto",
+    "brandFooter": "Disponible en iOS, Android y web. Tu progreso te sigue en todos los dispositivos.",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
     "errors": {
       "emailRequired": "El correo es obligatorio",
       "emailInvalid": "Correo no válido",
@@ -92,7 +95,8 @@
       "passwordShort": "La contraseña debe tener al menos 8 caracteres",
       "passwordsDontMatch": "Las contraseñas no coinciden",
       "nameRequired": "El nombre es obligatorio",
-      "countryRequired": "El país es obligatorio"
+      "countryRequired": "El país es obligatorio",
+      "signInFailed": "No pudimos iniciar tu sesión. Revisa tus datos e inténtalo de nuevo."
     }
   },
   "tabs": {

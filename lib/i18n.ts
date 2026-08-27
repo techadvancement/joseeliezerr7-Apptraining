@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import * as Localization from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import en from '@/locales/en.json';
@@ -8,14 +7,11 @@ import es from '@/locales/es.json';
 
 const LANG_KEY = 'app.lang';
 
-function detectLocale(): 'en' | 'es' {
-  try {
-    const tag = Localization.getLocales()[0]?.languageCode ?? 'en';
-    return tag.toLowerCase().startsWith('es') ? 'es' : 'en';
-  } catch {
-    return 'en';
-  }
-}
+// English is the starting language for everyone, regardless of what the device
+// reports. The team spans several countries and English is its common language,
+// so a Spanish phone should not decide what a US colleague sees on first run.
+// Whoever prefers Spanish switches once and the choice is remembered below.
+const DEFAULT_LANG: 'en' | 'es' = 'en';
 
 // Synchronous init at module load. This must complete BEFORE any component
 // calls useTranslation() — otherwise react-i18next crashes inside its
@@ -24,7 +20,7 @@ function detectLocale(): 'en' | 'es' {
 // mounts whenever the Root Layout rendered its navigator on first paint.
 i18n.use(initReactI18next).init({
   resources: { en: { translation: en }, es: { translation: es } },
-  lng: detectLocale(),
+  lng: DEFAULT_LANG,
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
   compatibilityJSON: 'v4',

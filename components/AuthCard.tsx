@@ -2,6 +2,7 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { LanguageToggle } from '@/components/LanguageToggle';
 import { useAuthSplit } from '@/lib/responsive';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
@@ -11,6 +12,14 @@ type Props = {
   gap?: number;
 };
 
+/**
+ * Shell shared by every sign-in screen.
+ *
+ * Wide web viewports get two panels: what the product is on the left, the form
+ * on the right. Everything else gets a single centred card. Both carry the
+ * brand mark and the language switch, so the switch is reachable before anyone
+ * has signed in.
+ */
 export function AuthCard({ children, maxWidth = 440, gap = spacing.xxl }: Props) {
   const split = useAuthSplit();
 
@@ -18,7 +27,12 @@ export function AuthCard({ children, maxWidth = 440, gap = spacing.xxl }: Props)
     return (
       <View style={splitStyles.shell}>
         <BrandPanel />
-        <View style={[splitStyles.formPanel, { gap }]}>{children}</View>
+        <View style={splitStyles.formPanel}>
+          <View style={splitStyles.formTopBar}>
+            <LanguageToggle />
+          </View>
+          <View style={[splitStyles.formBody, { gap }]}>{children}</View>
+        </View>
       </View>
     );
   }
@@ -32,23 +46,40 @@ export function AuthCard({ children, maxWidth = 440, gap = spacing.xxl }: Props)
         asCard ? styles.card : styles.flat,
       ]}
     >
+      <CompactHeader />
       {children}
+    </View>
+  );
+}
+
+/** Logo on the left, language switch on the right — phones and narrow web. */
+function CompactHeader() {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.compactHeader}>
+      <View style={styles.compactBrand}>
+        <Image
+          source={require('@/assets/images/logo.png')}
+          style={styles.compactLogo}
+          contentFit="contain"
+        />
+        <Text style={styles.compactName}>{t('common.appName')}</Text>
+      </View>
+      <LanguageToggle />
     </View>
   );
 }
 
 function BrandPanel() {
   const { t } = useTranslation();
-  const bullets: { icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
-    { icon: 'play-circle', key: 'auth.brandBullets.0' },
-    { icon: 'library', key: 'auth.brandBullets.1' },
-    { icon: 'cloud-download', key: 'auth.brandBullets.2' },
+  const features: { icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
+    { icon: 'play-circle-outline', key: 'auth.brandBullets.0' },
+    { icon: 'document-text-outline', key: 'auth.brandBullets.1' },
+    { icon: 'cloud-download-outline', key: 'auth.brandBullets.2' },
   ];
+
   return (
     <View style={splitStyles.brandPanel}>
-      <View style={[splitStyles.blob, splitStyles.blobPrimary]} pointerEvents="none" />
-      <View style={[splitStyles.blob, splitStyles.blobAccent]} pointerEvents="none" />
-
       <View style={splitStyles.brandTop}>
         <Image
           source={require('@/assets/images/logo.png')}
@@ -60,19 +91,20 @@ function BrandPanel() {
 
       <View style={splitStyles.brandMid}>
         <Text style={splitStyles.tagline}>{t('auth.brandTagline')}</Text>
-        <View style={splitStyles.bulletList}>
-          {bullets.map((b) => (
-            <View key={b.key} style={splitStyles.bulletRow}>
-              <View style={splitStyles.bulletIcon}>
-                <Ionicons name={b.icon} size={14} color={colors.primary} />
-              </View>
-              <Text style={splitStyles.bulletText}>{t(b.key)}</Text>
+        <View style={splitStyles.featureList}>
+          {features.map((f, i) => (
+            <View
+              key={f.key}
+              style={[splitStyles.featureRow, i > 0 && splitStyles.featureDivider]}
+            >
+              <Ionicons name={f.icon} size={17} color={colors.primary} />
+              <Text style={splitStyles.featureText}>{t(f.key)}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      <View style={splitStyles.brandBottom} />
+      <Text style={splitStyles.brandFooter}>{t('auth.brandFooter')}</Text>
     </View>
   );
 }
@@ -95,6 +127,20 @@ const styles = StyleSheet.create({
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 16 },
   },
+  compactHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.lg,
+  },
+  compactBrand: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  compactLogo: { width: 36, height: 36, borderRadius: 10 },
+  compactName: {
+    ...typography.bodyBold,
+    fontSize: 16,
+    color: colors.text,
+    letterSpacing: -0.2,
+  },
 });
 
 const splitStyles = StyleSheet.create({
@@ -111,69 +157,76 @@ const splitStyles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 40,
     shadowOffset: { width: 0, height: 20 },
-    minHeight: 540,
+    minHeight: 520,
   },
   brandPanel: {
     flex: 1,
     padding: spacing.xxl,
-    backgroundColor: colors.surfaceAlt,
-    gap: spacing.lg,
+    backgroundColor: colors.bgElevated,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
     justifyContent: 'space-between',
-    overflow: 'hidden',
-    position: 'relative',
+  },
+  brandTop: {
+    height: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  logo: { width: 40, height: 40, borderRadius: 11 },
+  brandName: {
+    ...typography.bodyBold,
+    fontSize: 17,
+    color: colors.text,
+    letterSpacing: -0.2,
+  },
+  brandMid: { gap: spacing.xl, paddingVertical: spacing.xl },
+  tagline: {
+    fontSize: 28,
+    lineHeight: 37,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    color: colors.text,
+    maxWidth: 320,
+  },
+  featureList: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  featureDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  featureText: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+    flex: 1,
+  },
+  brandFooter: {
+    ...typography.caption,
+    color: colors.textSubtle,
+    lineHeight: 17,
   },
   formPanel: {
     flex: 1,
     padding: spacing.xxl,
-    justifyContent: 'center',
   },
-  blob: {
-    position: 'absolute',
-    width: 260,
-    height: 260,
-    borderRadius: 9999,
-    ...(Platform.OS === 'web' ? ({ filter: 'blur(80px)' } as any) : {}),
-  },
-  blobPrimary: {
-    top: -60,
-    left: -60,
-    backgroundColor: colors.primary,
-    opacity: 0.28,
-  },
-  blobAccent: {
-    bottom: -80,
-    right: -60,
-    backgroundColor: colors.accent,
-    opacity: 0.22,
-  },
-  brandTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-  },
-  brandName: { ...typography.h3, color: colors.text, fontSize: 20 },
-  brandMid: { gap: spacing.lg },
-  tagline: {
-    ...typography.h1,
-    color: colors.text,
-    fontSize: 30,
-    lineHeight: 38,
-  },
-  bulletList: { gap: spacing.md },
-  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  bulletIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primary + '22',
+  formTopBar: {
+    height: 40,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
-  bulletText: {
-    color: colors.textMuted,
-    fontSize: 14,
+  formBody: {
     flex: 1,
+    justifyContent: 'center',
+    paddingTop: spacing.lg,
   },
-  brandBottom: { height: 4 },
 });

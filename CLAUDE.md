@@ -54,7 +54,7 @@ const title = i18n.language === 'es' ? video.title_es : video.title_en;
 
 For static UI strings use `t('namespace.key')`. Both `locales/en.json` and `locales/es.json` must stay at key parity — verify with a flatten + diff before committing locale changes. i18next is configured with `compatibilityJSON: 'v4'`, so plurals use `_one`/`_other` suffixes and are looked up via `t('series.lessons', { count })`.
 
-Language is persisted in AsyncStorage under `app.lang` (key set in `lib/i18n.ts`). System language is the initial fallback.
+Language is persisted in AsyncStorage under `app.lang` (key set in `lib/i18n.ts`). **English is the initial language for everyone** — the device locale is deliberately ignored, because the team spans several countries and a Spanish phone should not decide what a colleague elsewhere sees on first run. `components/LanguageToggle.tsx` puts the EN/ES switch on the sign-in screens (via `AuthCard`) so it is reachable before anyone has an account.
 
 ### Auth flow
 
