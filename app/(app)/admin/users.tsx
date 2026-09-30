@@ -14,9 +14,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/ui/Screen';
 import { useToast } from '@/components/Toast';
-import { adminDeleteUser, listAdminUsers, setUserRole, type AdminUser } from '@/lib/admin';
+import {
+  adminCreateUser,
+  adminDeleteUser,
+  adminUpdateUser,
+  listAdminUsers,
+  setUserRole,
+  type AdminUser,
+} from '@/lib/admin';
+import { AdminField } from '@/components/admin/AdminField';
+import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/lib/auth';
 import { colors, radius, spacing, typography } from '@/constants/theme';
+
+type Mode =
+  | { kind: 'list' }
+  | { kind: 'create' }
+  | { kind: 'edit'; user: AdminUser };
 
 export default function AdminUsers() {
   const router = useRouter();
@@ -27,6 +41,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>({ kind: 'list' });
 
   async function load() {
     setLoading(true);
@@ -123,10 +138,39 @@ export default function AdminUsers() {
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.eyebrow}>{t('admin.labels.users')}</Text>
-            <Text style={styles.title}>{t('admin.titles.usersCount', { count: users.length })}</Text>
+            <Text style={styles.title}>
+              {mode.kind === 'list'
+                ? t('admin.titles.usersCount', { count: users.length })
+                : mode.kind === 'create'
+                ? t('admin.new.user')
+                : t('admin.edit.user', { name: mode.user.full_name || mode.user.email })}
+            </Text>
           </View>
+          {mode.kind === 'list' ? (
+            <Pressable
+              onPress={() => setMode({ kind: 'create' })}
+              style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+            >
+              <Ionicons name="add" size={20} color="#fff" />
+            </Pressable>
+          ) : (
+            <Pressable onPress={() => setMode({ kind: 'list' })} style={styles.iconBtn}>
+              <Ionicons name="close" size={20} color={colors.text} />
+            </Pressable>
+          )}
         </View>
 
+        {mode.kind !== 'list' ? (
+          <UserForm
+            initial={mode.kind === 'edit' ? mode.user : undefined}
+            isSelf={mode.kind === 'edit' && mode.user.id === user?.id}
+            onSaved={() => {
+              setMode({ kind: 'list' });
+              load();
+            }}
+          />
+        ) : (
+          <>
         <View style={styles.searchWrap}>
           <Ionicons name="search" size={18} color={colors.textMuted} />
           <TextInput
@@ -193,6 +237,9 @@ export default function AdminUsers() {
                     <ActivityIndicator color={colors.text} />
                   ) : (
                     <View style={styles.actions}>
+                      <Pressable onPress={() => setMode({ kind: 'edit', user: u })} style={styles.iconBtn}>
+                        <Ionicons name="create-outline" size={18} color={colors.text} />
+                      </Pressable>
                       {!isMe ? (
                         <Pressable
                           onPress={() => confirmRoleChange(u, isAdminUser ? 'user' : 'admin')}
@@ -237,16 +284,185 @@ export default function AdminUsers() {
             <Text style={styles.legendText}>{t('admin.users.delete')}</Text>
           </View>
         </View>
+          </>
+        )}
         </View>
       </ScrollView>
     </Screen>
   );
 }
 
+function UserForm({
+  initial,
+  isSelf,
+  onSaved,
+}: {
+  initial?: AdminUser;
+  isSelf: boolean;
+  onSaved: () => void;
+}) {
+  const toast = useToast();
+  const { t } = useTranslation();
+  const [email, setEmail] = useState(initial?.email ?? '');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState(initial?.full_name ?? '');
+  const [country, setCountry] = useState(initial?.country ?? '');
+  const [role, setRole] = useState<'user' | 'admin'>(initial?.role ?? 'user');
+  const [saving, setSaving] = useState(false);
+
+  async function onSave() {
+    if (!email.trim()) {
+      toast.error(t('admin.errors.emailRequired'));
+      return;
+    }
+    if (!initial && password.length < 8) {
+      toast.error(t('admin.errors.passwordShort'));
+      return;
+    }
+    if (initial && password && password.length < 8) {
+      toast.error(t('admin.errors.passwordShort'));
+      return;
+    }
+    try {
+      setSaving(true);
+      if (initial) {
+        await adminUpdateUser(initial.id, {
+          email,
+          password,
+          full_name: fullName,
+          country,
+          // El propio admin no puede quitarse el rol: la función lo rechaza.
+          role: isSelf ? null : role,
+        });
+        toast.success(t('admin.toasts.savedUser'));
+      } else {
+        await adminCreateUser({
+          email,
+          password,
+          full_name: fullName,
+          country,
+          role,
+        });
+        toast.success(t('admin.toasts.createdUser'));
+      }
+      onSaved();
+    } catch (e: any) {
+      toast.error(translateUserError(e?.message, t));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <View style={{ gap: spacing.md }}>
+      <AdminField
+        label={t('admin.form.email')}
+        value={email}
+        onChangeText={setEmail}
+        placeholder="persona@ejemplo.org"
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
+      <AdminField
+        label={initial ? t('admin.form.newPassword') : t('admin.form.password')}
+        value={password}
+        onChangeText={setPassword}
+        placeholder="••••••••"
+        hint={initial ? t('admin.form.passwordEditHint') : t('admin.form.passwordHint')}
+        autoCapitalize="none"
+        secureTextEntry
+      />
+      <AdminField
+        label={t('admin.form.fullName')}
+        value={fullName}
+        onChangeText={setFullName}
+        placeholder="Ana Pérez"
+      />
+      <AdminField
+        label={t('admin.form.country')}
+        value={country}
+        onChangeText={setCountry}
+        placeholder="Honduras"
+      />
+
+      <View style={{ gap: 6 }}>
+        <Text style={styles.fieldLabel}>{t('admin.form.role')}</Text>
+        <View style={styles.roleRow}>
+          {(['user', 'admin'] as const).map((r) => {
+            const active = role === r;
+            return (
+              <Pressable
+                key={r}
+                onPress={() => !isSelf && setRole(r)}
+                style={[
+                  styles.roleOption,
+                  active && styles.roleOptionActive,
+                  isSelf && { opacity: 0.5 },
+                ]}
+              >
+                <Ionicons
+                  name={r === 'admin' ? 'shield-checkmark' : 'person-outline'}
+                  size={15}
+                  color={active ? colors.primary : colors.textMuted}
+                />
+                <Text style={[styles.roleText, active && { color: colors.primary }]}>
+                  {r === 'admin' ? t('admin.form.roleAdmin') : t('admin.form.roleUser')}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {isSelf ? <Text style={styles.roleHint}>{t('admin.form.roleSelfHint')}</Text> : null}
+      </View>
+
+      <Button
+        label={
+          saving
+            ? t('admin.buttons.saving')
+            : initial
+            ? t('admin.buttons.save')
+            : t('admin.buttons.createUser')
+        }
+        onPress={onSave}
+        loading={saving}
+      />
+    </View>
+  );
+}
+
+// Los errores llegan tal cual de Postgres, en inglés y sin contexto; se traducen
+// los que puede provocar el propio formulario.
+function translateUserError(message: string | undefined, t: (k: string) => string): string {
+  const m = (message ?? '').toLowerCase();
+  if (m.includes('email already registered')) return t('admin.errors.emailTaken');
+  if (m.includes('invalid email')) return t('admin.errors.emailInvalid');
+  if (m.includes('password must be')) return t('admin.errors.passwordShort');
+  if (m.includes('not authorized')) return t('admin.errors.notAuthorized');
+  if (m.includes('cannot remove your own admin role')) return t('admin.errors.selfDemote');
+  return message ?? t('admin.errors.generic');
+}
+
 const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl, alignItems: 'center' },
   inner: { width: '100%', maxWidth: 1100, gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  addBtn: {
+    width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  fieldLabel: {
+    ...typography.caption, color: colors.textMuted, textTransform: 'uppercase',
+    letterSpacing: 0.6, fontSize: 11, fontWeight: '700',
+  },
+  roleRow: { flexDirection: 'row', gap: spacing.sm },
+  roleOption: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 12, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
+  },
+  roleOptionActive: { borderColor: colors.primary, backgroundColor: colors.surfaceAlt },
+  roleText: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
+  roleHint: { color: colors.textSubtle, ...typography.caption },
   back: {
     width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border,

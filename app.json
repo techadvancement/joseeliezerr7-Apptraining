@@ -77,7 +77,7 @@
       "typedRoutes": false
     },
     "extra": {
-      "supabaseUrl": "https://trainingapp.tech-advancement.com",
+      "supabaseUrl": "https://trainingapp.techadvancement.com",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4NzgyODMzLCJleHAiOjE5MzY0NjI4MzN9.W9l36TXpJHWZh0Cu9RtbZ7yYh6HfzDtHeiw2gvoMZdM",
       "router": {
         "origin": false

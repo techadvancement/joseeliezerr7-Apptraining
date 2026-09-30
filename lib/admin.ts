@@ -268,6 +268,48 @@ export async function adminDeleteUser(userId: string): Promise<void> {
   if (error) throw error;
 }
 
+export type NewUserInput = {
+  email: string;
+  password: string;
+  full_name: string;
+  country: string;
+  role: 'user' | 'admin';
+};
+
+export async function adminCreateUser(input: NewUserInput): Promise<string> {
+  const { data, error } = await supabase.rpc('admin_create_user', {
+    p_email: input.email.trim(),
+    p_password: input.password,
+    p_full_name: input.full_name.trim(),
+    p_country: input.country.trim(),
+    p_role: input.role,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+// Lo que va en null se deja como está, así que la contraseña solo cambia si se
+// escribe una nueva.
+export type EditUserInput = {
+  email?: string | null;
+  password?: string | null;
+  full_name?: string | null;
+  country?: string | null;
+  role?: 'user' | 'admin' | null;
+};
+
+export async function adminUpdateUser(userId: string, input: EditUserInput): Promise<void> {
+  const { error } = await supabase.rpc('admin_update_user', {
+    p_user_id: userId,
+    p_email: input.email?.trim() || null,
+    p_password: input.password || null,
+    p_full_name: input.full_name?.trim() || null,
+    p_country: input.country?.trim() || null,
+    p_role: input.role ?? null,
+  });
+  if (error) throw error;
+}
+
 // =========================
 // Stats
 // =========================

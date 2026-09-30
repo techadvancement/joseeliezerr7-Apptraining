@@ -378,13 +378,15 @@
       "video": "New video",
       "manual": "New manual",
       "category": "New category",
-      "series": "New series"
+      "series": "New series",
+      "user": "New user"
     },
     "edit": {
       "video": "Edit video",
       "manual": "Edit manual",
       "category": "Edit: {{name}}",
-      "series": "Edit: {{name}}"
+      "series": "Edit: {{name}}",
+      "user": "Edit: {{name}}"
     },
     "form": {
       "titleEn": "Title (English)",
@@ -414,7 +416,18 @@
       "duration": "Duration (sec)",
       "resolution": "Resolution",
       "featured": "Featured",
-      "featuredHint": "Show on Home"
+      "featuredHint": "Show on Home",
+      "email": "Email",
+      "password": "Password",
+      "newPassword": "New password",
+      "passwordHint": "At least 8 characters",
+      "passwordEditHint": "Leave blank to keep the current one",
+      "fullName": "Full name",
+      "country": "Country",
+      "role": "Role",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
+      "roleSelfHint": "You cannot change your own role."
     },
     "buttons": {
       "save": "Save changes",
@@ -422,7 +435,8 @@
       "createVideo": "Create video",
       "createManual": "Create manual",
       "createCategory": "Create category",
-      "createSeries": "Create series"
+      "createSeries": "Create series",
+      "createUser": "Create user"
     },
     "toasts": {
       "savedSeries": "Series updated",
@@ -440,7 +454,9 @@
       "userRoleUpdated": "Role updated",
       "userDeleted": "User deleted",
       "uploaded": "File uploaded",
-      "uploadError": "Upload failed"
+      "uploadError": "Upload failed",
+      "savedUser": "User updated",
+      "createdUser": "User created"
     },
     "confirms": {
       "deleteSeries": "Delete \"{{name}}\"? Videos will keep no series.",
@@ -464,7 +480,13 @@
       "categoryRequired": "Select a category",
       "save": "Failed to save",
       "load": "Failed to load",
-      "generic": "Error"
+      "generic": "Error",
+      "emailRequired": "Email is required",
+      "passwordShort": "Password must be at least 8 characters",
+      "emailTaken": "That email is already registered",
+      "emailInvalid": "That email is not valid",
+      "notAuthorized": "Only admins can do this",
+      "selfDemote": "You cannot remove your own admin role"
     },
     "users": {
       "you": "you",

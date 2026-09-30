@@ -378,13 +378,15 @@
       "video": "Nuevo video",
       "manual": "Nuevo manual",
       "category": "Nueva categoría",
-      "series": "Nueva serie"
+      "series": "Nueva serie",
+      "user": "Nuevo usuario"
     },
     "edit": {
       "video": "Editar video",
       "manual": "Editar manual",
       "category": "Editar: {{name}}",
-      "series": "Editar: {{name}}"
+      "series": "Editar: {{name}}",
+      "user": "Editar: {{name}}"
     },
     "form": {
       "titleEn": "Título (Inglés)",
@@ -414,7 +416,18 @@
       "duration": "Duración (seg)",
       "resolution": "Resolución",
       "featured": "Destacada",
-      "featuredHint": "Mostrar en Home"
+      "featuredHint": "Mostrar en Home",
+      "email": "Correo",
+      "password": "Contraseña",
+      "newPassword": "Contraseña nueva",
+      "passwordHint": "Mínimo 8 caracteres",
+      "passwordEditHint": "Déjalo vacío para no cambiarla",
+      "fullName": "Nombre completo",
+      "country": "País",
+      "role": "Rol",
+      "roleAdmin": "Administrador",
+      "roleUser": "Usuario",
+      "roleSelfHint": "No puedes cambiar tu propio rol."
     },
     "buttons": {
       "save": "Guardar cambios",
@@ -422,7 +435,8 @@
       "createVideo": "Crear video",
       "createManual": "Crear manual",
       "createCategory": "Crear categoría",
-      "createSeries": "Crear serie"
+      "createSeries": "Crear serie",
+      "createUser": "Crear usuario"
     },
     "toasts": {
       "savedSeries": "Serie actualizada",
@@ -440,7 +454,9 @@
       "userRoleUpdated": "Rol actualizado",
       "userDeleted": "Usuario eliminado",
       "uploaded": "Archivo subido",
-      "uploadError": "Error al subir"
+      "uploadError": "Error al subir",
+      "savedUser": "Usuario actualizado",
+      "createdUser": "Usuario creado"
     },
     "confirms": {
       "deleteSeries": "¿Eliminar \"{{name}}\"? Los videos quedarán sin serie.",
@@ -464,7 +480,13 @@
       "categoryRequired": "Selecciona una categoría",
       "save": "Error al guardar",
       "load": "Error al cargar",
-      "generic": "Error"
+      "generic": "Error",
+      "emailRequired": "El correo es obligatorio",
+      "passwordShort": "La contraseña debe tener al menos 8 caracteres",
+      "emailTaken": "Ese correo ya está registrado",
+      "emailInvalid": "Ese correo no es válido",
+      "notAuthorized": "Solo los administradores pueden hacer esto",
+      "selfDemote": "No puedes quitarte tu propio rol de administrador"
     },
     "users": {
       "you": "tú",
