@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,9 @@ export default function ManualsIndex() {
   const router = useRouter();
   const { user } = useAuth();
   const { columns } = useResponsive();
+  // La rejilla vive en una columna de 880 px, así que más de cuatro
+  // columnas deja las portadas diminutas.
+  const cols = Math.min(columns, 4);
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [savedManuals, setSavedManuals] = useState<Manual[]>([]);
   const [filter, setFilter] = useState<LangFilter>('all');
@@ -90,6 +93,12 @@ export default function ManualsIndex() {
 
   return (
     <Screen padded={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.text} />
+        }
+      >
       <View style={styles.header}>
         <View style={styles.heroIconWrap}>
           <Ionicons name="library" size={28} color={colors.primary} />
@@ -172,37 +181,48 @@ export default function ManualsIndex() {
           <ManualCardSkeleton />
           <ManualCardSkeleton />
         </View>
+      ) : filtered.length === 0 ? (
+        <View style={styles.content}>
+          <EmptyState
+            icon="library-outline"
+            title={t('manuals.empty')}
+            description={query ? t('manuals.emptySearch') : undefined}
+            tone="accent"
+          />
+        </View>
       ) : (
-        <FlatList
-          key={`cols-${columns}`}
-          data={filtered}
-          keyExtractor={(m) => m.id}
-          numColumns={columns}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.grid}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.text} />
-          }
-          renderItem={({ item }) => (
-            <View style={styles.gridItem}>
-              <ManualCard manual={item} variant="cover" />
-            </View>
-          )}
-          ListEmptyComponent={
-            <EmptyState
-              icon="library-outline"
-              title={t('manuals.empty')}
-              description={query ? t('manuals.emptySearch') : undefined}
-              tone="accent"
-            />
-          }
-        />
+        <View style={styles.grid}>
+          {Array.from({ length: Math.ceil(filtered.length / cols) }, (_, rowIdx) => {
+            const slice = filtered.slice(rowIdx * cols, rowIdx * cols + cols);
+            // Las celdas sobrantes se rellenan con huecos vacíos: sin ellas, dos
+            // manuales se reparten toda la fila y acaban en esquinas opuestas.
+            const fillers = cols - slice.length;
+            return (
+              <View key={rowIdx} style={styles.row}>
+                {slice.map((m) => (
+                  <View key={m.id} style={styles.gridItem}>
+                    <ManualCard manual={m} variant="cover" fullWidth />
+                  </View>
+                ))}
+                {Array.from({ length: fillers }).map((_, i) => (
+                  <View key={`f-${i}`} style={styles.gridItem} />
+                ))}
+              </View>
+            );
+          })}
+        </View>
       )}
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: { paddingBottom: spacing.xxxl },
+  // Todo el contenido de la página comparte la misma columna que la cabecera,
+  // para que los chips, el título de la rejilla y las portadas queden alineados
+  // en vez de pegados al borde de pantallas anchas.
+  content: { width: '100%', maxWidth: 880, alignSelf: 'center' },
   header: {
     width: '100%',
     maxWidth: 880,
@@ -248,15 +268,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   searchWrap: { marginTop: spacing.md },
-  savedSection: { paddingTop: spacing.xl, gap: spacing.sm, paddingHorizontal: spacing.lg },
+  savedSection: {
+    width: '100%', maxWidth: 880, alignSelf: 'center',
+    paddingTop: spacing.xl, gap: spacing.sm, paddingHorizontal: spacing.lg,
+  },
   savedRail: { paddingRight: spacing.lg, gap: spacing.md, alignItems: 'flex-start' },
   chips: {
+    width: '100%', maxWidth: 880, alignSelf: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
   gridHeader: {
+    width: '100%', maxWidth: 880, alignSelf: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
@@ -266,8 +291,14 @@ const styles = StyleSheet.create({
   },
   gridTitle: { ...typography.h2, color: colors.text, fontSize: 18 },
   gridCount: { color: colors.textMuted, ...typography.caption, fontWeight: '700' },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
-  grid: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
-  row: { gap: spacing.md },
+  list: {
+    width: '100%', maxWidth: 880, alignSelf: 'center',
+    paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md,
+  },
+  grid: {
+    width: '100%', maxWidth: 880, alignSelf: 'center',
+    paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg,
+  },
+  row: { flexDirection: 'row', gap: spacing.md },
   gridItem: { flex: 1 },
 });

@@ -13,10 +13,13 @@ export function ManualCard({
   manual,
   variant = 'row',
   width,
+  fullWidth = false,
 }: {
   manual: Manual;
   variant?: Variant;
   width?: number;
+  /** Ocupa el ancho de su celda en una rejilla, en vez de un ancho fijo. */
+  fullWidth?: boolean;
 }) {
   const { i18n, t } = useTranslation();
   const pathname = usePathname();
@@ -39,20 +42,22 @@ export function ManualCard({
         <Pressable
           style={({ pressed }) => [
             styles.coverCard,
-            width ? { width } : null,
+            fullWidth ? styles.coverCardFull : width ? { width } : null,
             pressed && styles.coverPressed,
           ]}
         >
           <View
             style={[
               styles.coverThumbWrap,
-              width
+              fullWidth
+                ? styles.coverThumbFull
+                : width
                 ? { width, height: Math.round((width * 11) / 8) }
                 : { width: 140, height: Math.round((140 * 11) / 8) },
             ]}
           >
             <Image
-              source={thumb(manual.thumbnail_url, (width ?? 140) * 2)}
+              source={thumb(manual.thumbnail_url, fullWidth ? 560 : (width ?? 140) * 2)}
               contentFit="cover"
               transition={200}
               style={StyleSheet.absoluteFill}
@@ -242,6 +247,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     flexShrink: 0,
   },
+  coverCardFull: { width: '100%' },
+  coverThumbFull: { width: '100%', aspectRatio: 8 / 11, height: undefined },
   coverPressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
   coverThumbWrap: {
     borderRadius: radius.md,
