@@ -12,16 +12,17 @@ if (!file) {
 
 let h = fs.readFileSync(file, 'utf8');
 
-// Hash splash.png so we can cache-bust on every content change without
-// renaming the file. Browsers aggressively cache /splash.png because the
-// URL never changes; appending ?v=<hash> forces a refetch when the image
-// is actually different.
-let splashV = '';
-try {
-  const splashPath = path.join(path.dirname(file), 'splash.png');
-  const buf = fs.readFileSync(splashPath);
-  splashV = crypto.createHash('md5').update(buf).digest('hex').slice(0, 8);
-} catch (_) { splashV = String(Date.now()); }
+// Hash the splash and the icons so we can cache-bust on every content change
+// without renaming the files. Browsers and the CDN cache them for 30 days
+// (immutable) because the URL never changes; appending ?v=<hash> forces a
+// refetch when the image is actually different.
+function assetV(name) {
+  try {
+    const buf = fs.readFileSync(path.join(path.dirname(file), name));
+    return crypto.createHash('md5').update(buf).digest('hex').slice(0, 8);
+  } catch (_) { return String(Date.now()); }
+}
+const splashV = assetV('splash.png');
 
 // Extract Supabase origin (if set at build time) so we can preconnect.
 const supaUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -38,9 +39,9 @@ const headTags = [
   '<meta name="apple-mobile-web-app-capable" content="yes" />',
   '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
   '<meta name="apple-mobile-web-app-title" content="Tech Advancement" />',
-  '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />',
-  '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />',
-  '<link rel="apple-touch-icon" href="/apple-touch-icon.png" />',
+  '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=' + assetV('favicon-32.png') + '" />',
+  '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=' + assetV('favicon-16.png') + '" />',
+  '<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=' + assetV('apple-touch-icon.png') + '" />',
   supaOrigin ? '<link rel="preconnect" href="' + supaOrigin + '" crossorigin />' : '',
   supaOrigin ? '<link rel="dns-prefetch" href="' + supaOrigin + '" />' : '',
   '<style>html,body,#root{background-color:#0B0F1A !important;color-scheme:dark;}'
@@ -62,6 +63,8 @@ const headTags = [
 
 // Drop any existing viewport meta (Expo emits one too).
 h = h.replace(/<meta name="viewport"[^>]*\/>/g, '');
+// Expo emits its own favicon link; version it like the rest.
+h = h.replace('href="/favicon.ico"', 'href="/favicon.ico?v=' + assetV('favicon.ico') + '"');
 h = h.replace('</head>', '\n' + headTags + '\n  </head>');
 
 // Defensive boot scripts:
