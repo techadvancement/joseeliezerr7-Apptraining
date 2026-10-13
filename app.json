@@ -32,7 +32,7 @@
       "package": "com.solucionestechn.techadvancement",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#FFFFFF"
       },
       "permissions": [],
       "softwareKeyboardLayoutMode": "resize"
