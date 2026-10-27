@@ -2,7 +2,8 @@ import { COUNTRIES, findCountry } from '../lib/countries';
 
 describe('countries', () => {
   it('lists countries with flag, EN and ES names', () => {
-    expect(COUNTRIES.length).toBeGreaterThan(10);
+    expect(COUNTRIES.length).toBe(249);
+    expect(new Set(COUNTRIES.map((c) => c.code)).size).toBe(COUNTRIES.length);
     for (const c of COUNTRIES) {
       expect(c.code).toMatch(/^[A-Z]{2}$/);
       expect(c.name_en.length).toBeGreaterThan(0);
@@ -16,6 +17,9 @@ describe('countries', () => {
     expect(findCountry('Costa Rica')?.code).toBe('CR');
     expect(findCountry('méxico')?.code).toBe('MX');
     expect(findCountry('Spain')?.code).toBe('ES');
+    expect(findCountry('mexico')?.code).toBe('MX');
+    expect(findCountry('Kenia')?.code).toBe('KE');
+    expect(findCountry('Costa de Marfil')?.code).toBe('CI');
     expect(findCountry('not-real')).toBeUndefined();
   });
 });

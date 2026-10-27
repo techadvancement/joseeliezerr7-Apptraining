@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { COUNTRIES, type Country } from '@/lib/countries';
+import { COUNTRIES, findCountry, normalize, type Country } from '@/lib/countries';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
 type Props = {
@@ -26,29 +26,24 @@ export function CountryPicker({ value, onChange, label, error }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
-  const selected = useMemo(() => {
-    if (!value) return null;
-    const v = value.trim().toLowerCase();
-    return (
-      COUNTRIES.find(
-        (c) =>
-          c.code.toLowerCase() === v ||
-          c.name_en.toLowerCase() === v ||
-          c.name_es.toLowerCase() === v
-      ) ?? null
-    );
-  }, [value]);
+  const selected = useMemo(() => (value ? findCountry(value) ?? null : null), [value]);
+
+  // Sorted by the name shown in the current language.
+  const sorted = useMemo(() => {
+    const key = (c: Country) => (lang === 'es' ? c.name_es : c.name_en);
+    return [...COUNTRIES].sort((a, b) => key(a).localeCompare(key(b), lang));
+  }, [lang]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return COUNTRIES;
-    return COUNTRIES.filter(
+    const q = normalize(query);
+    if (!q) return sorted;
+    return sorted.filter(
       (c) =>
-        c.code.toLowerCase().includes(q) ||
-        c.name_en.toLowerCase().includes(q) ||
-        c.name_es.toLowerCase().includes(q)
+        c.code.toLowerCase() === q ||
+        normalize(c.name_en).includes(q) ||
+        normalize(c.name_es).includes(q)
     );
-  }, [query]);
+  }, [query, sorted]);
 
   return (
     <View style={styles.wrapper}>
@@ -102,6 +97,7 @@ export function CountryPicker({ value, onChange, label, error }: Props) {
               data={filtered}
               keyExtractor={(c) => c.code}
               keyboardShouldPersistTaps="handled"
+              initialNumToRender={20}
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => {
