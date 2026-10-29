@@ -18,7 +18,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.solucionestechn.techadvancement",
+      "bundleIdentifier": "org.bibletranslationtools.techadvance",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -29,7 +29,7 @@
       }
     },
     "android": {
-      "package": "com.solucionestechn.techadvancement",
+      "package": "org.bibletranslationtools.techadvance",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
         "backgroundColor": "#FFFFFF"
