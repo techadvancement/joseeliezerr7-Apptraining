@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Tech Advancement",
+    "name": "TA Training",
     "slug": "tech-advancement",
     "scheme": "techadvancement",
     "version": "1.0.0",
@@ -86,7 +86,7 @@
         "projectId": "9f7922b3-ce65-4d8e-826d-da9234644731"
       }
     },
-    "owner": "joseeliezerr123",
+    "owner": "tech-advance",
     "runtimeVersion": {
       "policy": "appVersion"
     },
